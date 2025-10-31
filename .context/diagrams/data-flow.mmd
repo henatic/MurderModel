@@ -1,0 +1,50 @@
+graph LR
+    %% Data Sources
+    H[Historical Data<br/>1980-2014] --> P[Data Preprocessing]
+    D[Demographics] --> P
+    L[Location Data] --> P
+    
+    %% Preprocessing
+    P --> C[Data Cleaning]
+    C --> F[Feature Engineering]
+    
+    %% Feature Processing
+    F --> FD[Demographic<br/>Features]
+    F --> FL[Location<br/>Features]
+    F --> FT[Temporal<br/>Features]
+    
+    %% Model Pipeline
+    FD & FL & FT --> M[Model Training]
+    M --> V[Validation]
+    
+    %% Evaluation
+    V --> E1[Performance<br/>Metrics]
+    V --> E2[Bias<br/>Testing]
+    V --> E3[Cross<br/>Validation]
+    
+    %% Outputs
+    E1 & E2 & E3 --> R[Results<br/>Analysis]
+    R --> O[Deployment]
+    
+    %% Styling
+    style H fill:#f9f,stroke:#333,stroke-width:2px
+    style D fill:#f9f,stroke:#333,stroke-width:2px
+    style L fill:#f9f,stroke:#333,stroke-width:2px
+    
+    style P fill:#bbf,stroke:#333,stroke-width:2px
+    style C fill:#bbf,stroke:#333,stroke-width:2px
+    style F fill:#bbf,stroke:#333,stroke-width:2px
+    
+    style FD fill:#bfb,stroke:#333,stroke-width:2px
+    style FL fill:#bfb,stroke:#333,stroke-width:2px
+    style FT fill:#bfb,stroke:#333,stroke-width:2px
+    
+    style M fill:#fbf,stroke:#333,stroke-width:2px
+    style V fill:#fbf,stroke:#333,stroke-width:2px
+    
+    style E1 fill:#fbb,stroke:#333,stroke-width:2px
+    style E2 fill:#fbb,stroke:#333,stroke-width:2px
+    style E3 fill:#fbb,stroke:#333,stroke-width:2px
+    
+    style R fill:#fff,stroke:#333,stroke-width:2px
+    style O fill:#fff,stroke:#333,stroke-width:2px
