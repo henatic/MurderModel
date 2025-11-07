@@ -1,0 +1,352 @@
+% Progress Report for Murder Model Project
+\documentclass[sigconf]{acmart}
+
+% Packages
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{multirow}
+
+% Metadata
+\title{Murder Model: A Machine Learning Approach to Crime Prediction}
+\subtitle{Progress Report - Phase 2 Completion}
+
+\author{Henry Morgan}
+\affiliation{%
+  \institution{University of Washington Bothell}
+  \department{CSS 581: Machine Learning}
+  \city{Bothell}
+  \state{Washington}
+  \country{USA}
+}
+\email{hdmorgan@uw.edu}
+
+% ACM classification
+\begin{CCSXML}
+<ccs2012>
+<concept>
+<concept_id>10010147.10010178.10010179</concept_id>
+<concept_desc>Computing methodologies~Supervised learning by classification</concept_desc>
+<concept_significance>500</concept_significance>
+</concept>
+</ccs2012>
+\end{CCSXML}
+
+\ccsdesc[500]{Computing methodologies~Supervised learning by classification}
+
+\keywords{machine learning, crime prediction, logistic regression, binary classification, data preprocessing}
+
+\begin{document}
+
+\begin{abstract}
+This progress report documents the development of a machine learning model for predicting crime outcomes based on demographic and geographic features. The project utilizes historical homicide data from 1980-2014 to build a binary classification model predicting whether crimes are solved. We present a comprehensive data preprocessing pipeline, a baseline logistic regression model, and an evaluation framework. Our implementation achieves perfect classification on the test dataset (accuracy = 1.0), though this suggests potential data leakage or overfitting concerns that warrant further investigation. The modular architecture supports future model development and experimentation.
+\end{abstract}
+
+\maketitle
+
+\section{Introduction}
+
+Crime prediction and analysis have become increasingly important applications of machine learning in public safety. This project develops a supervised learning system to predict crime outcomes based on historical patterns, demographic information, and geographic data. The goal is to classify whether a crime will be solved (binary classification) using features derived from victim demographics, perpetrator information, location data, and temporal patterns.
+
+\subsection{Project Objectives}
+
+The primary objectives of this project are:
+\begin{itemize}
+    \item Develop a robust data preprocessing pipeline to handle real-world crime data
+    \item Implement a baseline classification model with proper evaluation metrics
+    \item Create a modular, extensible architecture for future model development
+    \item Establish comprehensive testing and evaluation frameworks
+\end{itemize}
+
+\subsection{Dataset}
+
+The dataset consists of historical homicide records from 1980 to 2014, containing 24 features including:
+\begin{itemize}
+    \item \textbf{Temporal features}: Year, Month
+    \item \textbf{Geographic features}: State, City, Agency information
+    \item \textbf{Demographic features}: Victim and perpetrator age, sex, race, ethnicity
+    \item \textbf{Crime characteristics}: Crime type, weapon, relationship
+    \item \textbf{Target variable}: Crime Solved (Yes/No)
+\end{itemize}
+
+The dataset exhibits class imbalance with approximately 70.8\% solved cases and 29.2\% unsolved cases.
+
+\section{Methodology}
+
+\subsection{Development Phases}
+
+The project follows a structured development approach divided into three phases:
+
+\subsubsection{Phase 0: Project Setup}
+Initial project scaffolding, environment configuration, and repository structure establishment.
+
+\subsubsection{Phase 1: Data Preparation}
+Implementation of a comprehensive data preprocessing pipeline including:
+\begin{itemize}
+    \item Data validation and type checking
+    \item Missing value imputation
+    \item Outlier detection and handling
+    \item Feature engineering (seasons, age groups)
+    \item Categorical encoding
+    \item Numeric feature scaling
+\end{itemize}
+
+\subsubsection{Phase 2: Model Development (Current)}
+Development of baseline models, evaluation frameworks, and training pipelines.
+
+\subsection{Data Preprocessing Pipeline}
+
+The \texttt{DataProcessor} class implements a multi-stage preprocessing pipeline:
+
+\paragraph{Validation and Type Conversion}
+The pipeline validates column presence and converts data types. A critical enhancement handles month names (e.g., ``January'') by mapping them to numeric values (1-12), resolving initial data incompatibility issues.
+
+\paragraph{Missing Value Handling}
+Numeric features use mean imputation while categorical features use mode imputation, ensuring no missing values propagate through the pipeline.
+
+\paragraph{Feature Engineering}
+New features are derived from existing data:
+\begin{itemize}
+    \item \textbf{Season}: Derived from month using quarterly bins
+    \item \textbf{Age Groups}: Categorical binning of victim and perpetrator ages
+\end{itemize}
+
+\paragraph{Encoding and Scaling}
+Categorical variables undergo label encoding, and numeric features are standardized using z-score normalization. The scaler handles constant-value columns (std = 0) by centering without scaling, preventing NaN propagation.
+
+\subsection{Model Architecture}
+
+\subsubsection{Base Model Class}
+An abstract \texttt{BaseModel} class provides common functionality:
+\begin{itemize}
+    \item Stratified train/validation/test splitting with configurable ratios
+    \item Abstract methods for fit, predict, and predict\_proba
+    \item Model persistence (save/load)
+    \item Feature importance extraction
+    \item Evaluation metric computation
+\end{itemize}
+
+\subsubsection{Logistic Regression Implementation}
+The \texttt{LogisticModel} class implements the baseline classifier using scikit-learn's \texttt{LogisticRegression} with:
+\begin{itemize}
+    \item Optional StandardScaler preprocessing
+    \item L2 regularization (default C = 1.0)
+    \item LBFGS solver (max iterations = 1000)
+    \item Pipeline architecture for integrated preprocessing
+\end{itemize}
+
+\subsection{Evaluation Framework}
+
+The \texttt{ModelEvaluator} class provides comprehensive model assessment:
+
+\paragraph{Metrics}
+Multiple classification metrics are computed for train, validation, and test sets:
+\begin{itemize}
+    \item Accuracy
+    \item Precision
+    \item Recall
+    \item F1-Score
+    \item ROC-AUC
+\end{itemize}
+
+\paragraph{Visualizations}
+Three key visualizations are generated:
+\begin{itemize}
+    \item Confusion matrix (Figure~\ref{fig:confusion})
+    \item ROC curve (Figure~\ref{fig:roc})
+    \item Feature importance plot (Figure~\ref{fig:importance})
+\end{itemize}
+
+\paragraph{Reporting}
+Results are saved in JSON format with timestamps, enabling experiment tracking and model comparison.
+
+\section{Implementation Details}
+
+\subsection{Data Splitting Strategy}
+
+The dataset is split using stratified sampling to preserve class distribution:
+\begin{itemize}
+    \item Training set: 70\% (7,000 samples)
+    \item Validation set: 10\% (1,000 samples)
+    \item Test set: 20\% (2,000 samples)
+\end{itemize}
+
+Class proportions are maintained across all splits (approximately 71\% positive, 29\% negative), ensuring representative evaluation.
+
+\subsection{Training Pipeline}
+
+The end-to-end training script (\texttt{src/models/train.py}) automates:
+\begin{enumerate}
+    \item Data loading and preprocessing
+    \item Stratified data splitting
+    \item Model training
+    \item Comprehensive evaluation
+    \item Visualization generation
+    \item Model persistence
+\end{enumerate}
+
+The pipeline includes command-line interface support for configurable parameters (sample size, output directory, random seed).
+
+\section{Results}
+
+\subsection{Model Performance}
+
+Table~\ref{tab:results} summarizes the logistic regression model's performance across all datasets.
+
+\begin{table}[h]
+\centering
+\caption{Model Performance Metrics}
+\label{tab:results}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Metric} & \textbf{Train} & \textbf{Validation} & \textbf{Test} \\
+\midrule
+Accuracy  & 1.0000 & 1.0000 & 1.0000 \\
+Precision & 1.0000 & 1.0000 & 1.0000 \\
+Recall    & 1.0000 & 1.0000 & 1.0000 \\
+F1-Score  & 1.0000 & 1.0000 & 1.0000 \\
+ROC-AUC   & 1.0000 & 1.0000 & 1.0000 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Confusion Matrix}
+
+Figure~\ref{fig:confusion} shows the confusion matrix for the test set, demonstrating perfect classification with no false positives or false negatives.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.45\textwidth]{../data/output/Figure_1.png}
+\caption{Confusion matrix on test set showing perfect classification of both classes.}
+\label{fig:confusion}
+\end{figure}
+
+\subsection{ROC Curve}
+
+The ROC curve (Figure~\ref{fig:roc}) achieves an AUC of 1.0, indicating perfect discrimination between classes across all thresholds.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.45\textwidth]{../data/output/Figure_2.png}
+\caption{ROC curve demonstrating perfect class separation (AUC = 1.0).}
+\label{fig:roc}
+\end{figure}
+
+\subsection{Feature Importance}
+
+Figure~\ref{fig:importance} displays the top features by coefficient magnitude in the logistic regression model. Features with positive coefficients increase the probability of case resolution, while negative coefficients decrease it.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.45\textwidth]{../data/output/Figure_3.png}
+\caption{Feature importance based on logistic regression coefficients. Top 20 features shown.}
+\label{fig:importance}
+\end{figure}
+
+\section{Testing and Validation}
+
+\subsection{Test Coverage}
+
+The project includes comprehensive unit and integration tests:
+\begin{itemize}
+    \item \textbf{Preprocessing tests} (8 tests): Validate data processing steps
+    \item \textbf{Model tests} (3 tests): Verify model training and prediction
+    \item \textbf{Integration tests} (3 tests): End-to-end pipeline validation with real data
+\end{itemize}
+
+All 14 tests pass successfully, ensuring code reliability and correctness.
+
+\subsection{Debugging Process}
+
+Two critical issues were identified and resolved during development:
+
+\paragraph{Month Column Encoding}
+The dataset contained month names as strings rather than numeric values. The \texttt{validate\_data} method was enhanced with a mapping dictionary to convert month names to integers (1-12).
+
+\paragraph{Zero Standard Deviation Handling}
+When all samples share the same value for a feature (e.g., Year = 1980 in sample data), the standard deviation is zero, causing division-by-zero errors during scaling. The \texttt{scale\_numeric} method was modified to detect constant columns and apply centering only, avoiding NaN propagation.
+
+\section{Discussion}
+
+\subsection{Perfect Performance Analysis}
+
+The model's perfect classification accuracy (1.0 across all metrics) raises important concerns:
+
+\paragraph{Potential Data Leakage}
+The target variable (\texttt{Crime Solved}) may be correlated with features that are only known after case resolution. For example, perpetrator information might only be available for solved cases, creating a circular dependency.
+
+\paragraph{Overfitting Indicators}
+Identical performance on training, validation, and test sets suggests the model may have memorized patterns rather than learning generalizable features. Further investigation with cross-validation and different data splits is warranted.
+
+\paragraph{Feature Engineering Issues}
+Some engineered features might inadvertently encode the target variable. A thorough feature audit is needed to ensure temporal causality and prevent information leakage.
+
+\subsection{Limitations}
+
+Current limitations include:
+\begin{itemize}
+    \item Limited model diversity (only logistic regression implemented)
+    \item Potential data quality issues not fully explored
+    \item No hyperparameter tuning performed
+    \item Limited cross-validation analysis
+    \item No handling of temporal dependencies in data
+\end{itemize}
+
+\subsection{Architecture Strengths}
+
+Despite performance concerns, the implementation demonstrates strong software engineering practices:
+\begin{itemize}
+    \item Modular, object-oriented design
+    \item Comprehensive test coverage
+    \item Automated end-to-end pipeline
+    \item Reproducible experiments with seeded randomness
+    \item Clear documentation and usage examples
+\end{itemize}
+
+\section{Future Work}
+
+\subsection{Phase 3: Model Refinement}
+
+Planned improvements include:
+\begin{itemize}
+    \item \textbf{Data audit}: Investigate feature-target relationships for leakage
+    \item \textbf{Feature selection}: Remove potentially problematic features
+    \item \textbf{Cross-validation}: Implement k-fold CV for robust evaluation
+    \item \textbf{Additional models}: Random Forest, Gradient Boosting, Neural Networks
+    \item \textbf{Hyperparameter tuning}: Grid search and Bayesian optimization
+    \item \textbf{Ensemble methods}: Model stacking and voting classifiers
+\end{itemize}
+
+\subsection{Advanced Techniques}
+
+Future enhancements could include:
+\begin{itemize}
+    \item SMOTE or other techniques for handling class imbalance
+    \item Time-series aware splitting to respect temporal ordering
+    \item Geographic clustering for regional analysis
+    \item Interpretability analysis (SHAP values, LIME)
+    \item Production deployment considerations
+\end{itemize}
+
+\section{Conclusion}
+
+This progress report documents the completion of Phase 2 of the Murder Model project. We have successfully implemented:
+\begin{itemize}
+    \item A robust data preprocessing pipeline handling real-world data challenges
+    \item A baseline logistic regression classifier with comprehensive evaluation
+    \item An automated training pipeline with visualization and reporting
+    \item Complete test coverage ensuring code reliability
+\end{itemize}
+
+While the model achieves perfect classification accuracy, this result necessitates careful investigation of potential data leakage and overfitting. The modular architecture provides a solid foundation for future experimentation and model refinement. The next phase will focus on addressing these concerns through rigorous feature analysis, diverse model implementations, and advanced validation techniques.
+
+The project demonstrates successful application of software engineering best practices to machine learning development, establishing a maintainable and extensible codebase for continued research.
+
+\section*{Acknowledgments}
+
+This project was completed as part of CSS 581: Machine Learning at the University of Washington Bothell. The dataset consists of historical homicide records covering the period 1980-2014.
+
+% Bibliography
+\bibliographystyle{ACM-Reference-Format}
+% \bibliography{sample-base}  % Uncomment and add references as needed
+
+\end{document}

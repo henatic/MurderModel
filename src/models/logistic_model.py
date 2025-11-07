@@ -54,6 +54,12 @@ class LogisticModel(BaseModel):
     def predict_proba(self, X: pd.DataFrame) -> np.ndarray:
         return self.pipeline.predict_proba(X)
 
+    def load_model(self, filepath: str) -> None:
+        """Load model from disk and restore pipeline."""
+        super().load_model(filepath)
+        # Restore pipeline reference from model
+        self.pipeline = self.model
+    
     def get_feature_importance(self) -> np.ndarray:
         # For logistic regression, coef_ is a good proxy
         if self.pipeline is None:

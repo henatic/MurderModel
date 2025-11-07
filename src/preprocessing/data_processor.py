@@ -39,6 +39,19 @@ class DataProcessor:
         missing_columns = [col for col in required_columns if col not in data.columns]
         if missing_columns:
             messages.append(f"Missing required columns: {missing_columns}")
+        
+        # Special handling for Month column if it contains month names
+        if 'Month' in data.columns and data['Month'].dtype == 'object':
+            # Convert month names to numbers (January=1, December=12)
+            month_map = {
+                'January': 1, 'February': 2, 'March': 3, 'April': 4,
+                'May': 5, 'June': 6, 'July': 7, 'August': 8,
+                'September': 9, 'October': 10, 'November': 11, 'December': 12
+            }
+            data['Month'] = data['Month'].map(month_map)
+            unmapped = data['Month'].isna().sum()
+            if unmapped > 0:
+                messages.append(f"Found {unmapped} invalid month names in Month column")
             
         # Validate numeric columns
         for col in self.numeric_columns:
@@ -139,7 +152,14 @@ class DataProcessor:
         data = data.copy()
         for col in self.numeric_columns:
             if col in data.columns:
-                data[col] = (data[col] - data[col].mean()) / data[col].std()
+                col_std = data[col].std()
+                col_mean = data[col].mean()
+                # Only scale if std > 0, otherwise keep original (constant column)
+                if col_std > 0 and not pd.isna(col_std):
+                    data[col] = (data[col] - col_mean) / col_std
+                # If constant, center it to 0
+                elif not pd.isna(col_mean):
+                    data[col] = data[col] - col_mean
         return data
     
     def engineer_features(self, data: pd.DataFrame) -> pd.DataFrame:
