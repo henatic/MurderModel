@@ -440,6 +440,9 @@ INPUT C:\Users\hdmor\AppData\Local\Programs\MiKTeX\fonts\tfm\public\libertine\Li
 INPUT C:\Users\hdmor\AppData\Local\Programs\MiKTeX\fonts\enc\dvips\inconsolata\i4-t1-4.enc
 INPUT C:\Users\hdmor\AppData\Local\Programs\MiKTeX\fonts\vf\public\libertine\LinLibertineTI-tlf-t1.vf
 INPUT C:\Users\hdmor\AppData\Local\Programs\MiKTeX\fonts\tfm\public\libertine\LinLibertineTI-tlf-t1--base.tfm
+INPUT .\ProgressReport.bbl
+INPUT .\ProgressReport.bbl
+INPUT ProgressReport.bbl
 INPUT C:\Users\hdmor\AppData\Local\Programs\MiKTeX\tex\generic\stringenc\se-pdfdoc.def
 INPUT C:\Users\hdmor\AppData\Local\Programs\MiKTeX\tex\generic\stringenc\se-pdfdoc.def
 INPUT C:\Users\hdmor\AppData\Local\Programs\MiKTeX\tex\generic\stringenc\se-pdfdoc.def

@@ -1,0 +1,3 @@
+Larion, Abigail. “Homicide Reports, 1980-2014.” Kaggle, 10 Feb. 2017, www.kaggle.com/datasets/murderaccountability/homicide-reports/data.
+V. Mandalapu, L. Elluri, P. Vyas and N. Roy, "Crime Prediction Using Machine Learning and Deep Learning: A Systematic Review and Future Directions," in IEEE Access, vol. 11, pp. 60153-60170, 2023, doi: 10.1109/ACCESS.2023.3286344. keywords: {Deep learning;Prediction algorithms;Machine learning algorithms;Databases;Market research;Predictive models;Urban areas;Crime prediction;crime detection;crime datasets;deep learning;machine learning;smart policing;survey}
+“Murder Accountability Project.” Murder Accountability Project, www.murderdata.org/. Accessed 12 Nov. 2025.

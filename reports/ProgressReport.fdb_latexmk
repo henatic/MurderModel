@@ -1,5 +1,13 @@
 # Fdb version 4
-["pdflatex"] 1762475714.46368 "c:/Users/hdmor/OneDrive/Documents/UWB/CSS581/archive/reports/ProgressReport.tex" "ProgressReport.pdf" "ProgressReport" 1762475716.75807 0
+["bibtex ProgressReport"] 1762990637.53474 "ProgressReport.aux" "ProgressReport.bbl" "ProgressReport" 1762990637.92575 0
+  "./ACM-Reference-Format.bst" 1762289184 93560 12e0ced1522ea2bfa9b2fb12855c7e9e ""
+  "./progress-refs.bib" 1762990636 1215 bac60e7885d2929d0261ea9c9cc1efe4 ""
+  "ProgressReport.aux" 1762990595 7433 5d682fd9cf0d75d3c964cd63737e72f7 "pdflatex"
+  (generated)
+  "ProgressReport.bbl"
+  "ProgressReport.blg"
+  (rewritten before read)
+["pdflatex"] 1762990593.20047 "c:/Users/hdmor/OneDrive/Documents/UWB/CSS581/archive/reports/ProgressReport.tex" "ProgressReport.pdf" "ProgressReport" 1762990637.92605 0
   "../data/output/Figure_1.png" 1762475268 19376 c71a2f18500a1327a0635f8859d8c778 ""
   "../data/output/Figure_2.png" 1762475289 31293 29169d1f7ac30cd6173e64d92b919b5e ""
   "../data/output/Figure_3.png" 1762475310 44880 f569cb0d1d5cf2ffcd71e0cef03b5bfb ""
@@ -177,11 +185,12 @@
   "C:/Users/hdmor/AppData/Local/Programs/MiKTeX/tex/latex/xcolor/xcolor.sty" 1729265222 55384 b454dec21c2d9f45ec0b793f0995b992 ""
   "C:/Users/hdmor/AppData/Local/Programs/MiKTeX/tex/latex/xkeyval/xkeyval.sty" 1656236919 4937 4ce600ce9bd4ec84d0250eb6892fcf4f ""
   "C:/Users/hdmor/AppData/Local/Programs/MiKTeX/tex/latex/xstring/xstring.sty" 1693735632 123 a302f2c651a95033260db60e51527ae8 ""
-  "ProgressReport.aux" 1762475716 7024 0208e52f4b641bdf075a5599eb63d29d "pdflatex"
-  "ProgressReport.out" 1762475716 4389 4ce5873f7925a085addf51eb2110825f "pdflatex"
-  "ProgressReport.tex" 1762475705 15033 b822fc7f9a897f191f756083d399a1d9 ""
+  "ProgressReport.aux" 1762990595 7433 5d682fd9cf0d75d3c964cd63737e72f7 "pdflatex"
+  "ProgressReport.bbl" 1762990637 3194 a92a568d69366e7dd5fef91ea98ae28e "bibtex ProgressReport"
+  "ProgressReport.out" 1762990595 4485 bc0a21bcf08834c8aa9a4f755813f5f7 "pdflatex"
+  "ProgressReport.tex" 1762990636 15151 46182688ada3a4ad61ae4682f18d2c47 ""
   "acmart.cls" 1762289184 122400 54cc4edcc7b9cb1bf0a23c528626957c ""
-  "c:/Users/hdmor/OneDrive/Documents/UWB/CSS581/archive/reports/ProgressReport.tex" 1762475705 15033 b822fc7f9a897f191f756083d399a1d9 ""
+  "c:/Users/hdmor/OneDrive/Documents/UWB/CSS581/archive/reports/ProgressReport.tex" 1762990636 15151 46182688ada3a4ad61ae4682f18d2c47 ""
   (generated)
   "ProgressReport.aux"
   "ProgressReport.log"
