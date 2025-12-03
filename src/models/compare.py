@@ -24,37 +24,25 @@ from src.models.random_forest_model import RandomForestModel
 from src.evaluation.evaluator import ModelEvaluator
 
 
-def load_and_preprocess_data(data_path: str, target_col: str = 'Crime Solved', 
-                             nrows: int = None) -> tuple:
-    """Load and preprocess data from CSV file."""
+def load_data(data_path: str, target_col: str = 'Crime Solved',
+              nrows: int = None) -> tuple:
+    """Load raw data and return features/target with basic cleaning."""
     print(f"\n{'='*80}")
-    print("Loading and Preprocessing Data")
+    print("Loading Data")
     print(f"{'='*80}")
-    
+
     df = pd.read_csv(data_path, nrows=nrows)
     print(f"Loaded: {df.shape[0]} rows, {df.shape[1]} columns")
-    
+
     if target_col not in df.columns:
         raise ValueError(f"Target column '{target_col}' not found in data")
-    
+
+    df = df.dropna(subset=[target_col])
+    df = df.drop_duplicates()
+
     y = df[target_col]
     X = df.drop(columns=[target_col])
-    
-    processor = DataProcessor()
-    X_processed, messages = processor.process_data(X)
-    
-    X_numeric = X_processed.select_dtypes(include=[np.number])
-    mask = ~X_numeric.isna().any(axis=1)
-    X_clean = X_numeric[mask]
-    y_clean = y[mask]
-    
-    print(f"Clean samples: {len(X_clean)} / {len(X)} ({len(X_clean)/len(X)*100:.1f}%)")
-    
-    if y_clean.dtype == 'object':
-        le = LabelEncoder()
-        y_clean = pd.Series(le.fit_transform(y_clean), index=y_clean.index, name=y_clean.name)
-    
-    return X_clean, y_clean, X_clean.columns.tolist()
+    return X, y
 
 
 def train_and_evaluate_model(model_name: str, model, X_train, X_val, X_test, 
@@ -188,33 +176,51 @@ def main():
     print(f"Random State: {args.random_state}")
     
     try:
-        # Load and preprocess
-        X, y, feature_names = load_and_preprocess_data(
-            args.data, args.target, args.nrows
-        )
+        # Load raw data
+        X_raw, y_raw = load_data(args.data, args.target, args.nrows)
         
-        # Split data once for fair comparison
+        # Split raw data once for fair comparison
         print(f"\n{'='*80}")
-        print("Splitting Data")
+        print("Splitting Data (pre-preprocessing)")
         print(f"{'='*80}")
-        X_train, X_val, X_test, y_train, y_val, y_test = BaseModel.split_data(
-            X, y, 
-            test_size=0.2, 
-            val_size=0.1, 
-            stratify=True, 
+        X_train_raw, X_val_raw, X_test_raw, y_train, y_val, y_test = BaseModel.split_data(
+            X_raw, y_raw,
+            test_size=0.2,
+            val_size=0.1,
+            stratify=True,
             random_state=args.random_state
         )
-        print(f"Train: {len(X_train)}, Val: {len(X_val)}, Test: {len(X_test)}")
+        print(f"Train: {len(X_train_raw)}, Val: {len(X_val_raw)}, Test: {len(X_test_raw)}")
+
+        # Fit preprocessing on train only to avoid leakage
+        processor = DataProcessor()
+        print("\nFitting preprocessing on training split only...")
+        X_train, messages = processor.fit_transform(X_train_raw)
+        X_val = processor.transform(X_val_raw)
+        X_test = processor.transform(X_test_raw)
+
+        if messages:
+            print("Preprocessing messages:")
+            for msg in messages[:5]:
+                print(f"  - {msg}")
+
+        # Encode target after split to avoid leakage
+        if y_train.dtype == 'object' or y_train.dtype.name == 'category':
+            le = LabelEncoder()
+            y_train = pd.Series(le.fit_transform(y_train), index=y_train.index, name=y_train.name)
+            y_val = pd.Series(le.transform(y_val), index=y_val.index, name=y_val.name)
+            y_test = pd.Series(le.transform(y_test), index=y_test.index, name=y_test.name)
+            print(f"Target encoded: {dict(enumerate(le.classes_))}")
         
         # Train and evaluate each model
         results_dict = {}
         
         for model_type in args.models:
             if model_type == 'logistic':
-                model = LogisticModel(random_state=args.random_state)
+                model = LogisticModel(random_state=args.random_state, scaler=False)
                 model_name = "Logistic Regression"
             elif model_type == 'random_forest':
-                model = RandomForestModel(random_state=args.random_state, n_estimators=100)
+                model = RandomForestModel(random_state=args.random_state, n_estimators=100, scaler=False)
                 model_name = "Random Forest"
             else:
                 continue

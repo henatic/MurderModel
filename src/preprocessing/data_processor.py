@@ -207,6 +207,9 @@ class DataProcessor:
         data = self._scale_numeric(data, fit=True)
         self.fitted = True
         keep_cols = self.fitted_categorical_columns + self.fitted_numeric_columns
+        # If no columns (e.g., synthetic numeric-only), fall back to any numeric cols
+        if not keep_cols:
+            keep_cols = data.select_dtypes(include=[np.number]).columns.tolist()
         return data[keep_cols], messages
 
     def transform(self, data: pd.DataFrame) -> pd.DataFrame:
@@ -219,12 +222,12 @@ class DataProcessor:
         data = self.handle_missing_values(data)
         data = self.handle_outliers(data)
         data = self.engineer_features(data)
-        # Ensure only fitted columns are encoded/scaled to preserve shape
         data = data.copy()
         data = self._encode_categorical(data, fit=False)
         data = self._scale_numeric(data, fit=False)
-        # Keep only columns seen during fit to maintain consistency
         keep_cols = self.fitted_categorical_columns + self.fitted_numeric_columns
+        if not keep_cols:
+            keep_cols = data.select_dtypes(include=[np.number]).columns.tolist()
         missing = [c for c in keep_cols if c not in data.columns]
         if missing:
             for col in missing:

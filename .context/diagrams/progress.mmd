@@ -5,23 +5,25 @@ graph LR
     %% Completed Work
     ROOT --> C[Completed]
     C --> C0["Phase 0: Project Setup"]
-    C --> C1["Phase 1: Data Preparation"]
+    C --> C1["Phase 1: Data Prep + Audit"]
     C --> C2["Phase 2: Baseline Logistic Regression"]
     C --> C3["Evaluation Framework (Phase 2.5)"]
     C --> C4["Progress Report Draft (Phase 2.9)"]
     C --> C5["End-to-End Pipeline + Testing"]
+    C --> C6["Phase 3: Random Forest + Comparison"]
+    C --> C7["Leakage Mitigation + Retrain (sample)"]
 
     %% In Progress
     ROOT --> I[In Progress]
-    I --> I0["Investigate perfect accuracy / data leakage"]
-    I --> I1["Draft plans for Phase 3 models"]
+    I --> I0["Hyperparameter tuning / CV"]
+    I --> I1["Full-dataset retrain without leakage"]
+    I --> I2["Documentation updates (roadmap/phase summaries)"]
 
     %% Next Steps
     ROOT --> N[Next Steps]
-    N --> N0["Audit features for leakage"]
-    N --> N1["Implement second algorithm (e.g., Random Forest)"]
-    N --> N2["Add hyperparameter tuning + cross-validation"]
-    N --> N3["Prepare final paper & presentation"]
+    N --> N0["Feature selection & imbalance handling"]
+    N --> N1["Temporal/geo validation"]
+    N --> N2["Finalize paper & presentation prep"]
 
     %% Styling
     style ROOT fill:#fff,stroke:#333,stroke-width:2px
@@ -34,9 +36,11 @@ graph LR
     style C3 fill:#eaffea,stroke:#333,stroke-width:1px
     style C4 fill:#eaffea,stroke:#333,stroke-width:1px
     style C5 fill:#eaffea,stroke:#333,stroke-width:1px
+    style C6 fill:#eaffea,stroke:#333,stroke-width:1px
+    style C7 fill:#eaffea,stroke:#333,stroke-width:1px
     style I0 fill:#fff5d7,stroke:#333,stroke-width:1px
     style I1 fill:#fff5d7,stroke:#333,stroke-width:1px
+    style I2 fill:#fff5d7,stroke:#333,stroke-width:1px
     style N0 fill:#e3e9ff,stroke:#333,stroke-width:1px
     style N1 fill:#e3e9ff,stroke:#333,stroke-width:1px
     style N2 fill:#e3e9ff,stroke:#333,stroke-width:1px
-    style N3 fill:#e3e9ff,stroke:#333,stroke-width:1px

@@ -125,10 +125,10 @@ def train_model(X, y, model_type: str = 'logistic', model_params: dict = None,
 
     if model_type == 'logistic':
         print(f"\nTraining Logistic Regression model...")
-        model = LogisticModel(random_state=random_state, **model_params)
+        model = LogisticModel(random_state=random_state, scaler=False, **model_params)
     elif model_type == 'random_forest':
         print(f"\nTraining Random Forest model...")
-        model = RandomForestModel(random_state=random_state, **model_params)
+        model = RandomForestModel(random_state=random_state, scaler=False, **model_params)
     else:
         raise ValueError(f"Unknown model type: {model_type}. Use 'logistic' or 'random_forest'")
 
