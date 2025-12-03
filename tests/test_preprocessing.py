@@ -59,9 +59,13 @@ class TestPreprocessing(unittest.TestCase):
     def test_encode_categorical(self):
         """Test categorical encoding."""
         processed_data = self.data_processor.encode_categorical(self.test_data)
-        for col in self.data_processor.categorical_columns:
-            if col in processed_data.columns:
-                self.assertTrue(processed_data[col].dtype in [np.int32, np.int64])
+        # Leakage-prone perpetrator fields should be dropped
+        self.assertNotIn('Perpetrator Sex', processed_data.columns)
+        self.assertNotIn('Perpetrator Race', processed_data.columns)
+        self.assertNotIn('Perpetrator Ethnicity', processed_data.columns)
+        for col in processed_data.columns:
+            if col in self.data_processor.categorical_columns:
+                self.assertTrue(np.issubdtype(processed_data[col].dtype, np.integer))
                 
     def test_scale_numeric(self):
         """Test numeric scaling."""
@@ -85,7 +89,12 @@ class TestPreprocessing(unittest.TestCase):
         processed_data, messages = self.data_processor.process_data(self.test_data)
         self.assertIsInstance(processed_data, pd.DataFrame)
         self.assertEqual(processed_data.isna().sum().sum(), 0)
-        self.assertGreater(len(processed_data.columns), len(self.test_data.columns))
+        self.assertIn('Season', processed_data.columns)
+        self.assertIn('Victim_Age_Group', processed_data.columns)
+        # Perpetrator features should be removed to avoid leakage
+        self.assertNotIn('Perpetrator Sex', processed_data.columns)
+        self.assertNotIn('Perpetrator Race', processed_data.columns)
+        self.assertNotIn('Perpetrator Ethnicity', processed_data.columns)
 
 if __name__ == '__main__':
     unittest.main()

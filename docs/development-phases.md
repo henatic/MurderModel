@@ -15,11 +15,11 @@
    - Install Python 3.x
    - Create virtual environment:
      ```bash
-     python -m venv venv
+     python -m venv .venv
      # On Windows
-     .\venv\Scripts\activate
+     .\.venv\Scripts\activate
      # On Unix/MacOS
-     source venv/bin/activate
+     source .venv/bin/activate
      ```
    - Install base dependencies:
      ```bash

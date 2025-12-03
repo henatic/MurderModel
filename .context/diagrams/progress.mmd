@@ -1,0 +1,42 @@
+graph LR
+    %% Overview
+    ROOT[Murder Model Progress]
+
+    %% Completed Work
+    ROOT --> C[Completed]
+    C --> C0["Phase 0: Project Setup"]
+    C --> C1["Phase 1: Data Preparation"]
+    C --> C2["Phase 2: Baseline Logistic Regression"]
+    C --> C3["Evaluation Framework (Phase 2.5)"]
+    C --> C4["Progress Report Draft (Phase 2.9)"]
+    C --> C5["End-to-End Pipeline + Testing"]
+
+    %% In Progress
+    ROOT --> I[In Progress]
+    I --> I0["Investigate perfect accuracy / data leakage"]
+    I --> I1["Draft plans for Phase 3 models"]
+
+    %% Next Steps
+    ROOT --> N[Next Steps]
+    N --> N0["Audit features for leakage"]
+    N --> N1["Implement second algorithm (e.g., Random Forest)"]
+    N --> N2["Add hyperparameter tuning + cross-validation"]
+    N --> N3["Prepare final paper & presentation"]
+
+    %% Styling
+    style ROOT fill:#fff,stroke:#333,stroke-width:2px
+    style C fill:#bfb,stroke:#333,stroke-width:2px
+    style I fill:#ffecb3,stroke:#333,stroke-width:2px
+    style N fill:#bbf,stroke:#333,stroke-width:2px
+    style C0 fill:#eaffea,stroke:#333,stroke-width:1px
+    style C1 fill:#eaffea,stroke:#333,stroke-width:1px
+    style C2 fill:#eaffea,stroke:#333,stroke-width:1px
+    style C3 fill:#eaffea,stroke:#333,stroke-width:1px
+    style C4 fill:#eaffea,stroke:#333,stroke-width:1px
+    style C5 fill:#eaffea,stroke:#333,stroke-width:1px
+    style I0 fill:#fff5d7,stroke:#333,stroke-width:1px
+    style I1 fill:#fff5d7,stroke:#333,stroke-width:1px
+    style N0 fill:#e3e9ff,stroke:#333,stroke-width:1px
+    style N1 fill:#e3e9ff,stroke:#333,stroke-width:1px
+    style N2 fill:#e3e9ff,stroke:#333,stroke-width:1px
+    style N3 fill:#e3e9ff,stroke:#333,stroke-width:1px

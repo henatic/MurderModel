@@ -2,31 +2,67 @@
 
 ## Quick Start
 
-### Training on Sample Data
+### Training Logistic Regression (Default)
 
 ```powershell
 # Activate virtual environment
 .venv\Scripts\Activate.ps1
 
-# Train on first 10,000 rows
+# Train logistic regression on first 10,000 rows
 python src/models/train.py --nrows 10000
+
+# Or explicitly specify the model
+python src/models/train.py --model logistic --nrows 10000
+```
+
+### Training Random Forest
+
+```powershell
+# Train random forest on first 10,000 rows
+python src/models/train.py --model random_forest --nrows 10000
+```
+
+### Comparing Both Models
+
+```powershell
+# Compare logistic regression and random forest side-by-side
+python src/models/compare.py --nrows 10000
+
+# Compare on full dataset
+python src/models/compare.py
 ```
 
 ### Training on Full Dataset
 
 ```powershell
-python src/models/train.py
+# Logistic Regression
+python src/models/train.py --model logistic
+
+# Random Forest
+python src/models/train.py --model random_forest
 ```
 
-### Command Line Options
+### Command Line Options (train.py)
 
 ```
 --data PATH           Path to data CSV file (default: data/raw/data.csv)
 --target COLUMN       Name of target column (default: Crime Solved)
+--model TYPE          Model type: 'logistic' or 'random_forest' (default: logistic)
 --nrows N            Number of rows to load (default: None = all)
 --output-dir PATH    Output directory for results (default: data/output)
 --random-state SEED  Random seed for reproducibility (default: 42)
 --no-save            Skip saving model to disk
+```
+
+### Command Line Options (compare.py)
+
+```
+--data PATH           Path to data CSV file (default: data/raw/data.csv)
+--target COLUMN       Name of target column (default: Crime Solved)
+--models TYPE [TYPE]  Models to compare (default: logistic random_forest)
+--nrows N            Number of rows to load (default: None = all)
+--output-dir PATH    Output directory for results (default: data/output)
+--random-state SEED  Random seed for reproducibility (default: 42)
 ```
 
 ## Pipeline Steps
@@ -47,7 +83,9 @@ The training pipeline performs the following steps automatically:
 
    - Splits data: 70% train, 10% validation, 20% test
    - Stratified sampling to preserve class distribution
-   - Trains Logistic Regression model with StandardScaler
+   - Trains selected model (Logistic Regression or Random Forest)
+   - **Logistic Regression**: Uses StandardScaler + L2 regularization (C=1.0)
+   - **Random Forest**: 100 trees, Gini importance, parallel processing
 
 3. **Model Evaluation**
 
@@ -59,8 +97,8 @@ The training pipeline performs the following steps automatically:
 
    - Confusion matrix
    - ROC curve
-   - Feature importance plot
-   - All saved as PNG files
+   - Feature importance plot (coefficients for Logistic, Gini importance for Random Forest)
+   - All saved as PNG files with model-specific filenames
 
 5. **Model Persistence**
    - Saves trained model as pickle file
@@ -68,13 +106,30 @@ The training pipeline performs the following steps automatically:
 
 ## Output Files
 
+### Training Pipeline (train.py)
+
 All outputs are saved to `data/output/` (or specified directory):
 
-- `logistic_model_evaluation_YYYYMMDD_HHMMSS.json` - Evaluation metrics
-- `confusion_matrix_YYYYMMDD_HHMMSS.png` - Confusion matrix visualization
-- `roc_curve_YYYYMMDD_HHMMSS.png` - ROC curve plot
-- `feature_importance_YYYYMMDD_HHMMSS.png` - Feature importance plot
-- `logistic_model_YYYYMMDD_HHMMSS.pkl` - Saved model
+**Logistic Regression:**
+
+- `logisticmodel_evaluation_YYYYMMDD_HHMMSS.json` - Evaluation metrics
+- `confusion_matrix_logistic_YYYYMMDD_HHMMSS.png` - Confusion matrix
+- `roc_curve_logistic_YYYYMMDD_HHMMSS.png` - ROC curve
+- `feature_importance_logistic_YYYYMMDD_HHMMSS.png` - Feature coefficients
+- `logisticmodel_YYYYMMDD_HHMMSS.pkl` - Saved model
+
+**Random Forest:**
+
+- `randomforestmodel_evaluation_YYYYMMDD_HHMMSS.json` - Evaluation metrics
+- `confusion_matrix_random_forest_YYYYMMDD_HHMMSS.png` - Confusion matrix
+- `roc_curve_random_forest_YYYYMMDD_HHMMSS.png` - ROC curve
+- `feature_importance_random_forest_YYYYMMDD_HHMMSS.png` - Feature importances
+- `randomforestmodel_YYYYMMDD_HHMMSS.pkl` - Saved model
+
+### Comparison Pipeline (compare.py)
+
+- `model_comparison_YYYYMMDD_HHMMSS.csv` - Comparison table (all metrics)
+- `model_comparison_YYYYMMDD_HHMMSS.json` - Detailed comparison data
 
 ## Example Output
 

@@ -23,6 +23,8 @@ var/
 # Virtual Environment
 venv/
 ENV/
+.venv/
+venv_old/
 
 # Jupyter Notebook
 .ipynb_checkpoints
@@ -31,6 +33,9 @@ ENV/
 # VS Code
 .vscode/
 *.code-workspace
+
+# Pytest cache
+.pytest_cache/
 
 # Data
 data/raw/*

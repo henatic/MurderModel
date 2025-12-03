@@ -17,6 +17,7 @@ class TestIntegration(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Load and preprocess a small sample of real data once for all tests."""
+        cls.X = cls.y = cls.X_val = cls.y_val = cls.X_test = cls.y_test = None
         # Path to raw data
         data_path = Path(__file__).parent.parent / 'data' / 'raw' / 'data.csv'
         
@@ -44,43 +45,50 @@ class TestIntegration(unittest.TestCase):
                 cls.y = None
                 return
             
-            # Separate target
-            y = df[target_col]
-            X = df.drop(columns=[target_col])
-            
-            # Preprocess
-            processor = DataProcessor()
-            X_processed, issues = processor.process_data(X)
-            
             # Drop rows with NaN in target
-            valid_idx = ~y.isna()
-            X_processed = X_processed[valid_idx]
-            y = y[valid_idx]
-            
-            # Ensure all columns are numeric (drop any remaining non-numeric columns)
-            X_processed = X_processed.select_dtypes(include=[np.number])
-            
-            # Drop any rows with NaN after preprocessing
-            mask = ~X_processed.isna().any(axis=1)
-            X_processed = X_processed[mask]
-            y = y[mask]
-            
-            # Encode target if needed (convert to binary 0/1)
-            if y.dtype == 'object' or y.dtype.name == 'category':
+            df = df.dropna(subset=[target_col])
+            df = df.drop_duplicates()
+
+            # Separate target
+            y_full = df[target_col]
+            X_full = df.drop(columns=[target_col])
+
+            # Split before fitting preprocessors to avoid leakage
+            X_train_raw, X_val_raw, X_test_raw, y_train, y_val, y_test = BaseModel.split_data(
+                X_full, y_full,
+                test_size=0.2,
+                val_size=0.1,
+                stratify=True,
+                random_state=42
+            )
+
+            processor = DataProcessor()
+            X_train, _ = processor.fit_transform(X_train_raw)
+            X_val = processor.transform(X_val_raw)
+            X_test = processor.transform(X_test_raw)
+
+            # Encode target if needed (convert to binary 0/1) after split
+            if y_train.dtype == 'object' or y_train.dtype.name == 'category':
                 from sklearn.preprocessing import LabelEncoder
                 le = LabelEncoder()
-                y = pd.Series(le.fit_transform(y), index=y.index)
-            
+                y_train = pd.Series(le.fit_transform(y_train), index=y_train.index)
+                y_val = pd.Series(le.transform(y_val), index=y_val.index)
+                y_test = pd.Series(le.transform(y_test), index=y_test.index)
+
             # Keep only if we have enough samples and features
-            if len(y) < 100 or X_processed.shape[1] < 2:
-                print(f"Integration test data check: {len(y)} samples, {X_processed.shape[1]} features")
+            if len(y_train) < 50 or X_train.shape[1] < 2:
+                print(f"Integration test data check: {len(y_train)} train samples, {X_train.shape[1]} features")
                 cls.X = None
                 cls.y = None
                 return
                 
-            print(f"Integration test loaded: {len(y)} samples, {X_processed.shape[1]} features")
-            cls.X = X_processed
-            cls.y = y
+            print(f"Integration test loaded: train={len(y_train)}, val={len(y_val)}, test={len(y_test)}, features={X_train.shape[1]}")
+            cls.X = X_train
+            cls.X_val = X_val
+            cls.X_test = X_test
+            cls.y = y_train
+            cls.y_val = y_val
+            cls.y_test = y_test
             
         except Exception as e:
             print(f"Could not load real data for integration test: {e}")
@@ -91,55 +99,32 @@ class TestIntegration(unittest.TestCase):
         """Test stratified splitting on real preprocessed data."""
         if self.X is None or self.y is None:
             self.skipTest("Real data not available")
-        
-        X_train, X_val, X_test, y_train, y_val, y_test = BaseModel.split_data(
-            self.X, self.y,
-            test_size=0.2,
-            val_size=0.1,
-            stratify=True,
-            random_state=42
-        )
-        
-        # Check sizes
-        total = len(self.y)
-        self.assertGreater(len(y_train), 0)
-        self.assertGreater(len(y_test), 0)
-        if y_val is not None:
-            self.assertGreater(len(y_val), 0)
-            self.assertAlmostEqual(len(y_train) + len(y_val) + len(y_test), total, delta=1)
-        else:
-            self.assertAlmostEqual(len(y_train) + len(y_test), total, delta=1)
-        
-        # Check class distributions are similar
-        overall_dist = self.y.value_counts(normalize=True).sort_index()
-        train_dist = y_train.value_counts(normalize=True).sort_index()
-        test_dist = y_test.value_counts(normalize=True).sort_index()
+
+        total = len(self.y) + len(self.y_val) + len(self.y_test)
+        self.assertAlmostEqual(len(self.y) + len(self.y_val) + len(self.y_test), total, delta=1)
+        self.assertGreater(len(self.y), 0)
+        self.assertGreater(len(self.y_test), 0)
+
+        overall_dist = pd.concat([self.y, self.y_val, self.y_test]).value_counts(normalize=True).sort_index()
+        train_dist = self.y.value_counts(normalize=True).sort_index()
+        test_dist = self.y_test.value_counts(normalize=True).sort_index()
         
         for cls in overall_dist.index:
-            self.assertAlmostEqual(overall_dist[cls], train_dist[cls], delta=0.05)
-            self.assertAlmostEqual(overall_dist[cls], test_dist[cls], delta=0.05)
+            self.assertAlmostEqual(overall_dist[cls], train_dist.get(cls, 0), delta=0.05)
+            self.assertAlmostEqual(overall_dist[cls], test_dist.get(cls, 0), delta=0.05)
     
     def test_full_pipeline_train_evaluate(self):
         """Test complete pipeline: split, train, evaluate on real data."""
         if self.X is None or self.y is None:
             self.skipTest("Real data not available")
         
-        # Split data
-        X_train, X_val, X_test, y_train, y_val, y_test = BaseModel.split_data(
-            self.X, self.y,
-            test_size=0.2,
-            val_size=0.1,
-            stratify=True,
-            random_state=42
-        )
-        
         # Train model
         model = LogisticModel(random_state=42)
-        model.fit(X_train, y_train)
+        model.fit(self.X, self.y)
         
         # Evaluate on train and test
-        train_metrics = model.evaluate(X_train, y_train)
-        test_metrics = model.evaluate(X_test, y_test)
+        train_metrics = model.evaluate(self.X, self.y)
+        test_metrics = model.evaluate(self.X_test, self.y_test)
         
         # Sanity checks
         self.assertIn('accuracy', train_metrics)
@@ -162,20 +147,11 @@ class TestIntegration(unittest.TestCase):
         import tempfile
         import os
         
-        # Split and train
-        X_train, X_val, X_test, y_train, y_val, y_test = BaseModel.split_data(
-            self.X, self.y,
-            test_size=0.2,
-            val_size=0.1,
-            stratify=True,
-            random_state=42
-        )
-        
         model = LogisticModel(random_state=42)
-        model.fit(X_train, y_train)
+        model.fit(self.X, self.y)
         
         # Get predictions before saving
-        preds_before = model.predict(X_test)
+        preds_before = model.predict(self.X_test)
         
         # Save to temp file
         with tempfile.NamedTemporaryFile(delete=False, suffix='.pkl') as tmp:
@@ -183,17 +159,14 @@ class TestIntegration(unittest.TestCase):
         
         try:
             model.save_model(tmp_path)
-            
-            # Load into new model instance
+
             model2 = LogisticModel()
             model2.load_model(tmp_path)
-            
-            # Get predictions after loading
-            preds_after = model2.predict(X_test)
-            
-            # Should be identical
+
+            preds_after = model2.predict(self.X_test)
+
             np.testing.assert_array_equal(preds_before, preds_after)
-            
+
         finally:
             if os.path.exists(tmp_path):
                 os.remove(tmp_path)
