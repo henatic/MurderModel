@@ -11,6 +11,7 @@ from sklearn.model_selection import cross_validate, StratifiedKFold, GroupShuffl
 import warnings
 import sys
 from typing import Tuple, Optional
+import matplotlib.pyplot as plt
 
 # Add project root to path
 project_root = Path(__file__).parent.parent.parent
@@ -58,7 +59,8 @@ def train_model(X_raw, y_raw, model_type: str = 'logistic', model_params: dict =
                 random_state: int = 42,
                 split_strategy: str = 'random',
                 geo_column: str = 'State',
-                class_weight: Optional[str] = None) -> tuple:
+                class_weight: Optional[str] = None,
+                resample: Optional[str] = None) -> tuple:
     """
     Train model with train/val/test split.
     
@@ -165,6 +167,16 @@ def train_model(X_raw, y_raw, model_type: str = 'logistic', model_params: dict =
         dist = y_split.value_counts(normalize=True)
         print(f"  {name}: {dist.to_dict()}")
 
+    # Optional resampling on training set
+    if resample in ('smote', 'adasyn'):
+        orig_train_len = len(X_train)
+        from src.utils.imbalance import apply_smote, apply_adasyn
+        if resample == 'smote':
+            X_train, y_train = apply_smote(X_train, y_train, random_state=random_state)
+        else:
+            X_train, y_train = apply_adasyn(X_train, y_train, random_state=random_state)
+        print(f"Resampled training set with {resample.upper()}: {orig_train_len} -> {len(X_train)}")
+
     # Initialize and train model
     model_params = model_params or {}
 
@@ -243,6 +255,7 @@ def evaluate_and_visualize(model, X_train, X_val, X_test, y_train, y_val, y_test
     )
     
     # ROC curve for test set
+    y_test_proba = None
     try:
         print("Generating ROC curve...")
         y_test_proba = model.predict_proba(X_test)[:, 1]
@@ -266,6 +279,43 @@ def evaluate_and_visualize(model, X_train, X_val, X_test, y_train, y_val, y_test
         )
     except Exception as e:
         print(f"Could not generate feature importance: {e}")
+
+    # Precision-Recall curve and threshold analysis
+    if y_test_proba is not None:
+        try:
+            print("Generating Precision-Recall curve...")
+            from sklearn.metrics import precision_recall_curve
+            precision, recall, thresholds = precision_recall_curve(y_test, y_test_proba)
+            plt.figure(figsize=(6, 5))
+            plt.plot(recall, precision, label='PR curve')
+            plt.xlabel('Recall')
+            plt.ylabel('Precision')
+            plt.title(f'Precision-Recall ({model_type.replace("_", " ").title()})')
+            plt.grid(True, alpha=0.3)
+            plt.tight_layout()
+            pr_path = output_path / f'pr_curve_{model_type}_{timestamp}.png'
+            plt.savefig(pr_path, dpi=300, bbox_inches='tight')
+            plt.close()
+            print(f"PR curve saved to: {pr_path}")
+
+            if len(thresholds) > 0:
+                f1_scores = 2 * (precision[:-1] * recall[:-1]) / (precision[:-1] + recall[:-1] + 1e-9)
+                best_idx = int(np.argmax(f1_scores))
+                best_threshold = thresholds[best_idx]
+                print(f"Best F1 threshold: {best_threshold:.4f} (F1={f1_scores[best_idx]:.4f})")
+                # Save threshold analysis
+                import json
+                th_path = output_path / f'thresholds_{model_type}_{timestamp}.json'
+                with open(th_path, 'w') as f:
+                    json.dump({
+                        'best_threshold': float(best_threshold),
+                        'best_f1': float(f1_scores[best_idx]),
+                        'precision_at_best': float(precision[best_idx]),
+                        'recall_at_best': float(recall[best_idx]),
+                    }, f, indent=2)
+                print(f"Threshold analysis saved to: {th_path}")
+        except Exception as e:
+            print(f"Could not generate PR/threshold analysis: {e}")
     
     # Classification report
     evaluator.print_classification_report(y_test, y_test_pred)
@@ -406,6 +456,9 @@ def main():
                        help='Column to use for geographic splits (default: State)')
     parser.add_argument('--class-weight', type=str, default=None,
                        help="Class weight for models (e.g., 'balanced')")
+    parser.add_argument('--resample', type=str, default=None,
+                       choices=['smote', 'adasyn', None],
+                       help='Optional oversampling on training split (smote/adasyn)')
     parser.add_argument('--logreg-C', type=float, default=None,
                        help="Override Logistic Regression C")
     parser.add_argument('--logreg-penalty', type=str, default=None,
@@ -450,7 +503,7 @@ def main():
          target_mapping) = train_model(
             X_raw, y_raw, model_type=args.model, random_state=args.random_state,
             split_strategy=args.split_strategy, geo_column=args.geo_column,
-            class_weight=cw,
+            class_weight=cw, resample=args.resample,
             model_params=model_params or None
         )
 

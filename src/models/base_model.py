@@ -21,6 +21,35 @@ class BaseModel(BaseEstimator, ClassifierMixin, ABC):
         """Initialize model."""
         self.model = None
         self.feature_names = None
+        # Make sklearn treat all derived models as classifiers (needed for CV/learning_curve scoring)
+        self._estimator_type = "classifier"
+
+    @property
+    def classes_(self):
+        # Expose underlying estimator classes_ so sklearn scoring works during CV/learning_curve
+        if self.model is None:
+            raise AttributeError("Model is not trained; classes_ not available")
+        if hasattr(self.model, "classes_"):
+            return self.model.classes_
+        # Pipelines store estimator as last step
+        if hasattr(self.model, "named_steps"):
+            clf = list(self.model.named_steps.values())[-1]
+            return getattr(clf, "classes_")
+        raise AttributeError("classes_ not found on wrapped model")
+
+    def _more_tags(self):
+        # Ensure sklearn tagging reports classifier behavior for CV/scoring utilities
+        return {"estimator_type": "classifier"}
+
+    def __sklearn_tags__(self):
+        # Start from BaseEstimator tags and override estimator_type so sklearn CV/scorers treat this as classifier
+        try:
+            tags = super().__sklearn_tags__()
+            tags.estimator_type = "classifier"
+            return tags
+        except Exception:
+            # Fallback for older sklearn; _more_tags is also set above
+            return {"estimator_type": "classifier"}
     
     @staticmethod
     def split_data(X: pd.DataFrame,

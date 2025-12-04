@@ -54,7 +54,7 @@ Phase 4 focuses on leakage investigation, feature analysis, and model refinement
 
 ### 5) CV/Fairness in Training Pipeline
 
-- `train.py` supports `--cv-folds`, `--split-strategy` (random/temporal/geo), `--class-weight`; emits CV JSON and fairness reports; CV uses StratifiedKFold.
+- `train.py` supports `--cv-folds`, `--split-strategy` (random/temporal/geo), `--class-weight`, tuned logistic overrides, and generates CV JSON, fairness reports, ROC + PR curves, and threshold analysis (StratifiedKFold).
 
 ### 6) Visualization Suite ✅
 
@@ -78,15 +78,13 @@ All major Phase 4 objectives have been accomplished:
 2. ✅ Feature correlation analysis and redundancy detection
 3. ✅ Model retraining on cleaned feature set
 4. ✅ Hyperparameter optimization with Grid/Random Search
-5. ✅ Class imbalance handling (class weights implemented)
+5. ✅ Class imbalance handling (class weights implemented; SMOTE/ADASYN toggle available via `--resample`)
 6. ✅ Advanced validation strategies (temporal and geographic splits)
 7. ✅ Comprehensive visualization suite
 
 ## Remaining Optional Enhancements
 
-## Remaining Optional Enhancements
-
-1. **SMOTE/ADASYN integration**: While class weights are implemented, oversampling methods could be added to the training CLI (utilities already exist in `src/utils/imbalance.py`).
+1. **Benchmark oversampling**: Compare `--resample smote|adasyn` against class-weight baselines and log impact on recall/precision.
 2. **Expanded hyperparameter search**: Consider Bayesian optimization for more efficient parameter exploration.
 3. **Feature ablation study**: Systematically remove features to quantify individual contributions.
 4. **Deeper fairness analysis**: Threshold tuning specific to demographic groups for fairness-aware predictions.
