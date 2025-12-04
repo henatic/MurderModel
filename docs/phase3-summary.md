@@ -2,224 +2,107 @@
 
 ## Overview
 
-Phase 3 has been successfully completed, implementing a second machine learning algorithm (Random Forest) and creating a comprehensive model comparison framework.
+Phase 3 delivered the second algorithm (Random Forest), a comparison framework, and re-ran evaluation with leakage mitigation (perpetrator features removed). Cross-validation and a basic fairness signal were added to the training pipeline.
 
 ## Completed Deliverables
 
 ### 1. Random Forest Model Implementation
-
 **File:** `src/models/random_forest_model.py`
-
-- Inherits from `BaseModel` for consistency
-- Configurable hyperparameters:
-  - `n_estimators`: Number of trees (default: 100)
-  - `max_depth`: Maximum tree depth (default: None)
-  - `min_samples_split`: Minimum samples for split (default: 2)
-  - `min_samples_leaf`: Minimum samples at leaf (default: 1)
-  - `max_features`: Features per split (default: 'sqrt')
-  - `n_jobs`: Parallel processing (default: -1, use all cores)
-- Optional StandardScaler preprocessing (disabled by default for tree-based model)
-- Feature importance via Gini importance scores
-- Full save/load functionality
-- Predict and predict_proba methods
+- Inherits from `BaseModel`; configurable hyperparameters (`n_estimators`, `max_depth`, `min_samples_split`, `min_samples_leaf`, `max_features`, `n_jobs`).
+- Optional StandardScaler (off by default); Gini feature importances; save/load; predict/predict_proba.
 
 ### 2. Comprehensive Unit Tests
-
 **File:** `tests/test_random_forest_model.py`
-
-- 6 test cases covering:
-  - Model initialization with parameters
-  - Fit and predict functionality
-  - Probability predictions (predict_proba)
-  - Feature importance extraction
-  - Model persistence (save/load)
-  - Pipeline with StandardScaler
-- All tests passing (20/20 total tests in project)
+- 6 cases: init, fit/predict, predict_proba, feature importance, save/load, with-scaler.
+- All tests passing (21/21 project-wide).
 
 ### 3. Enhanced Training Pipeline
-
-**File:** `src/models/train.py` (updated)
-
-- Added `--model` CLI argument supporting 'logistic' or 'random_forest'
-- Dynamic model instantiation based on user selection
-- Model-specific naming for output files:
-  - Evaluation reports: `{modelname}_model_evaluation_*.json`
-  - Visualizations: `confusion_matrix_{modeltype}_*.png`, etc.
-  - Saved models: `{modelname}_model_*.pkl`
-- Updated visualization titles to reflect model type
-- Feature importance plots differentiate between:
-  - Logistic Regression: "Coefficients"
-  - Random Forest: "Importance Scores"
+**File:** `src/models/train.py`
+- Supports `--model` (`logistic` or `random_forest`), model-specific outputs, titles, and feature-importance plots.
+- Split-before-preprocess to avoid leakage; target encoding post-split.
+- Optional k-fold CV (`--cv-folds`) with JSON summaries.
+- Fairness report: group positive rates by Victim Sex/Race on test split.
+- Disables double scaling (model-level scaler off when upstream scaling applied).
 
 ### 4. Model Comparison Framework
-
 **File:** `src/models/compare.py`
+- Side-by-side comparison on the same split; CSV/JSON exports; formatted console output.
+- Updated to split raw data, fit preprocessors on train only, transform val/test (leakage-safe).
 
-- Side-by-side model comparison on identical train/val/test splits
-- Compares all metrics across all datasets:
-  - Accuracy, Precision, Recall, F1-Score, ROC-AUC
-  - For Train, Validation, and Test sets
-- Performance difference calculation (Model 2 - Model 1)
-- Exports results in multiple formats:
-  - CSV table: `model_comparison_*.csv`
-  - JSON with full details: `model_comparison_*.json`
-- Formatted console output for immediate review
-
-### 5. Updated Documentation
-
-**Files Updated:**
-
-- `docs/project-roadmap.md`: Phase 3 marked complete, metrics updated
-- `docs/training-guide.md`: Added Random Forest instructions and comparison guide
-- `docs/progress.mmd`: Updated progress diagram with Phase 3 completion
+### 5. Documentation & Diagrams
+**Files:** `docs/project-roadmap.md`, `docs/training-guide.md`, `.context/diagrams/progress.mmd` updated for Phase 3 completion.
 
 ## Key Findings
 
-### Model Performance
+### Model Performance (20k sample, leakage-mitigated features)
+| Model               | Test Acc | Test Prec | Test Rec | Test F1 | Test ROC-AUC |
+| ------------------- | -------- | --------- | -------- | ------- | ------------ |
+| Logistic Regression | 0.7550   | 0.7945    | 0.8872   | 0.8383  | 0.8303       |
+| Random Forest       | 0.8540   | 0.9034    | 0.8914   | 0.8973  | 0.9120       |
 
-Both models achieve **perfect performance** (1.0 on all metrics):
+Cross-validation (3-fold on training split):
+- Logistic: acc 0.7461 ± 0.0109; prec 0.7877 ± 0.0171; rec 0.8841 ± 0.0097; F1 0.8329 ± 0.0067 (ROC-AUC not reported in scorer).
+- Random Forest: acc 0.8594 ± 0.0025; prec 0.9085 ± 0.0068; rec 0.8937 ± 0.0033; F1 0.9010 ± 0.0017 (ROC-AUC not reported in scorer).
 
-| Model               | Test Accuracy | Test Precision | Test Recall | Test F1 | Test ROC-AUC |
-| ------------------- | ------------- | -------------- | ----------- | ------- | ------------ |
-| Logistic Regression | 1.0           | 1.0            | 1.0         | 1.0     | 1.0          |
-| Random Forest       | 1.0           | 1.0            | 1.0         | 1.0     | 1.0          |
+Fairness signal (test split, positive rate):
+- Victim Sex: Female 0.739, Male 0.710, Unknown 0.000 (sparse).
+- Victim Race: Asian/Pacific Islander 0.700, Black 0.730, Native American/Alaska Native 0.679, Unknown 0.556, White 0.714.
 
-**Performance Differences:** 0.0 across all metrics
-
-### Critical Finding: Data Leakage Confirmed
-
-The identical perfect performance across both algorithms (linear and non-linear) strongly confirms the hypothesis of **data leakage**. This suggests that:
-
-1. Features in the dataset contain information only available after case resolution
-2. Most likely culprits: Perpetrator-related features (Sex, Race, Ethnicity, Age)
-3. These features may only be known for solved cases, creating a circular dependency
-
-### Feature Importance Differences
-
-While both models achieve the same accuracy, they identify different important features:
-
-- **Logistic Regression**: Uses coefficient magnitudes (linear relationships)
-- **Random Forest**: Uses Gini importance (non-linear splits)
-
-This difference will be valuable for understanding feature relationships once data leakage is resolved.
+### Critical Finding: Leakage Mitigation Improved Realism
+- Removing perpetrator fields and fitting preprocessors on train only eliminated perfect scores; metrics now differentiate models.
+- Random Forest outperforms Logistic Regression on held-out and CV metrics.
+- ROC-AUC was omitted in the current CV scorer; add explicit binary scorer in future runs.
 
 ## Test Results
-
 ```
-20 tests collected, 20 passed
-
+21 tests collected, 21 passed
 Breakdown:
-- 8 preprocessing tests ✓
-- 3 logistic model tests ✓
-- 6 random forest tests ✓
-- 3 integration tests ✓
+- 8 preprocessing
+- 3 logistic model
+- 6 random forest
+- 3 integration
+- 1 compare pipeline
 ```
 
 ## Command Examples
-
-### Train Individual Models
-
 ```powershell
-# Logistic Regression
-python src/models/train.py --model logistic --nrows 10000
+# Logistic Regression (with 3-fold CV on 20k sample)
+python src/models/train.py --model logistic --nrows 20000 --cv-folds 3
 
-# Random Forest
-python src/models/train.py --model random_forest --nrows 10000
+# Random Forest (with 3-fold CV on 20k sample)
+python src/models/train.py --model random_forest --nrows 20000 --cv-folds 3
+
+# Compare models (leakage-safe preprocessing inside)
+python src/models/compare.py --nrows 20000
 ```
 
-### Compare Models
-
-```powershell
-python src/models/compare.py --nrows 10000
-```
-
-## Output Files Generated
-
-From training Random Forest on 10,000 samples:
-
-- `randomforest_model_evaluation_20251128_233324.json`
-- `confusion_matrix_random_forest_20251128_233324.png`
-- `roc_curve_random_forest_20251128_233324.png`
-- `feature_importance_random_forest_20251128_233324.png`
-- `randomforest_model_20251128_233905.pkl`
-
-From model comparison:
-
-- `model_comparison_20251128_234026.csv`
-- `model_comparison_20251128_234026.json`
+## Output Files Generated (Dec 3, 2025 runs, 20k sample)
+- Logistic:
+  - `logistic_model_evaluation_20251203_121222.json`
+  - `cv_logistic_20251203_121222.json`
+  - `fairness_logistic_20251203_121222.json`
+  - `confusion_matrix_logistic_20251203_121222.png`
+  - `roc_curve_logistic_20251203_121222.png`
+  - `feature_importance_logistic_20251203_121222.png`
+  - `logistic_model_20251203_121231.pkl`
+- Random Forest:
+  - `randomforest_model_evaluation_20251203_121321.json`
+  - `cv_random_forest_20251203_121321.json`
+  - `fairness_random_forest_20251203_121321.json`
+  - `confusion_matrix_random_forest_20251203_121321.png`
+  - `roc_curve_random_forest_20251203_121321.png`
+  - `feature_importance_random_forest_20251203_121321.png`
+  - `randomforest_model_20251203_121446.pkl`
 
 ## Next Steps (Phase 4)
-
-1. **Critical Priority: Address Data Leakage**
-
-   - Audit all 24 features in the dataset
-   - Identify and remove perpetrator-related features
-   - Re-train both models on cleaned feature set
-   - Document performance changes
-
-2. **Hyperparameter Tuning**
-
-   - Implement GridSearchCV for both models
-   - 5-fold cross-validation
-   - Document optimal parameters
-
-3. **Advanced Evaluation**
-
-   - Learning curves
-   - Cross-validation scores
-   - Feature selection experiments
-
-4. **Final Documentation**
-   - Update progress report with Phase 3 findings
-   - Prepare final paper outline
-   - Document lessons learned
+1. **Leakage/Feature Audit**: Re-verify remaining features for post-outcome signals; consider temporal/geo splits.
+2. **Hyperparameter Tuning**: Grid/Random/Bayesian search with stratified CV; add ROC-AUC scorer in CV.
+3. **Advanced Evaluation**: Learning curves, PR curves; feature ablation; imbalance handling (class weights/SMOTE).
+4. **Fairness & Robustness**: Expand fairness metrics (parity gaps), threshold tuning sensitivity.
+5. **Documentation**: Roll updated metrics/plots into roadmap and final paper outline.
 
 ## Lessons Learned
-
-1. **Perfect accuracy is a red flag**, not a success - always investigate
-2. **Multiple algorithms with identical perfect scores** strongly indicate systematic issues (data leakage)
-3. **Modular architecture** (BaseModel pattern) made adding the second algorithm straightforward
-4. **Comprehensive testing** caught edge cases during Random Forest implementation
-5. **Comparison framework** provides valuable side-by-side analysis for future experiments
-
-## Technical Highlights
-
-- **Pipeline consistency**: Both models use the same Pipeline pattern
-- **Code reuse**: Minimal duplication due to BaseModel abstraction
-- **Parallel processing**: Random Forest uses all CPU cores (n_jobs=-1)
-- **Reproducibility**: All random operations seeded (random_state=42)
-- **Extensibility**: Framework ready for additional algorithms (e.g., Gradient Boosting, Neural Networks)
-
-## Files Created/Modified
-
-### Created:
-
-- `src/models/random_forest_model.py` (108 lines)
-- `src/models/compare.py` (260 lines)
-- `tests/test_random_forest_model.py` (119 lines)
-
-### Modified:
-
-- `src/models/train.py` (added multi-model support)
-- `docs/project-roadmap.md` (Phase 3 marked complete)
-- `docs/training-guide.md` (added Random Forest guide)
-- `docs/progress.mmd` (updated diagram)
-
-## Conclusion
-
-Phase 3 successfully delivers on all requirements:
-
-- ✅ Second algorithm implemented (Random Forest)
-- ✅ Model comparison framework operational
-- ✅ Comprehensive testing (20/20 tests passing)
-- ✅ Documentation updated
-- ✅ Ready for Phase 4 (data leakage investigation)
-
-The perfect performance confirms the need to address data leakage before proceeding with hyperparameter tuning or final model selection. Once the dataset is cleaned, the comparison framework will provide valuable insights into which algorithm performs better on the legitimate features.
-
----
-
-**Date Completed:** November 28, 2025  
-**Total Tests:** 20/20 passing  
-**Lines of Code Added:** ~487 lines  
-**Ready for:** Phase 4 - Data Investigation & Model Refinement
+1. Perfect accuracy is a leakage warning; post-mitigation metrics are more realistic.
+2. Split-before-preprocess is mandatory to avoid cross-split leakage.
+3. CV and fairness checks help surface stability and group effects early.
+4. Modular architecture and tests enabled rapid remediation and re-evaluation.

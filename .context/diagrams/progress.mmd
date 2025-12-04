@@ -12,18 +12,25 @@ graph LR
     C --> C5["End-to-End Pipeline + Testing"]
     C --> C6["Phase 3: Random Forest + Comparison"]
     C --> C7["Leakage Mitigation + Retrain (sample)"]
+    C --> C8["Phase 2 Audit (compare/train fixes + tests)"]
+    C --> C9["Phase 3 CV + Fairness reports"]
+    C --> C10["Phase 4: Feature Audit Complete"]
+    C --> C11["Phase 4: Hyperparameter Optimization"]
+    C --> C12["Phase 4: Temporal/Geo Validation"]
+    C --> C13["Phase 4: Visualization Suite"]
+    C --> C14["Phase 4: Class Imbalance Handling"]
 
     %% In Progress
     ROOT --> I[In Progress]
-    I --> I0["Hyperparameter tuning / CV"]
-    I --> I1["Full-dataset retrain without leakage"]
-    I --> I2["Documentation updates (roadmap/phase summaries)"]
+    I --> I0["Phase 5: Algorithm Comparison Analysis"]
+    I --> I1["Phase 5: Final Documentation"]
+    I --> I2["Phase 5: Interpretability Study"]
 
     %% Next Steps
     ROOT --> N[Next Steps]
-    N --> N0["Feature selection & imbalance handling"]
-    N --> N1["Temporal/geo validation"]
-    N --> N2["Finalize paper & presentation prep"]
+    N --> N0["Final Paper Preparation"]
+    N --> N1["Presentation Materials"]
+    N --> N2["Code Cleanup & Packaging"]
 
     %% Styling
     style ROOT fill:#fff,stroke:#333,stroke-width:2px
@@ -38,6 +45,13 @@ graph LR
     style C5 fill:#eaffea,stroke:#333,stroke-width:1px
     style C6 fill:#eaffea,stroke:#333,stroke-width:1px
     style C7 fill:#eaffea,stroke:#333,stroke-width:1px
+    style C8 fill:#eaffea,stroke:#333,stroke-width:1px
+    style C9 fill:#eaffea,stroke:#333,stroke-width:1px
+    style C10 fill:#eaffea,stroke:#333,stroke-width:1px
+    style C11 fill:#eaffea,stroke:#333,stroke-width:1px
+    style C12 fill:#eaffea,stroke:#333,stroke-width:1px
+    style C13 fill:#eaffea,stroke:#333,stroke-width:1px
+    style C14 fill:#eaffea,stroke:#333,stroke-width:1px
     style I0 fill:#fff5d7,stroke:#333,stroke-width:1px
     style I1 fill:#fff5d7,stroke:#333,stroke-width:1px
     style I2 fill:#fff5d7,stroke:#333,stroke-width:1px

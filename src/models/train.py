@@ -7,8 +7,10 @@ import numpy as np
 from pathlib import Path
 from datetime import datetime
 from sklearn.preprocessing import LabelEncoder
+from sklearn.model_selection import cross_validate, StratifiedKFold, GroupShuffleSplit
 import warnings
 import sys
+from typing import Tuple, Optional
 
 # Add project root to path
 project_root = Path(__file__).parent.parent.parent
@@ -52,8 +54,11 @@ def load_data(data_path: str, target_col: str = 'Crime Solved',
     return X, y
 
 
-def train_model(X, y, model_type: str = 'logistic', model_params: dict = None,
-                random_state: int = 42) -> tuple:
+def train_model(X_raw, y_raw, model_type: str = 'logistic', model_params: dict = None,
+                random_state: int = 42,
+                split_strategy: str = 'random',
+                geo_column: str = 'State',
+                class_weight: Optional[str] = None) -> tuple:
     """
     Train model with train/val/test split.
     
@@ -72,14 +77,52 @@ def train_model(X, y, model_type: str = 'logistic', model_params: dict = None,
     print(f"{'='*80}")
     
     # Split data (on raw features)
-    print(f"Splitting data (test=20%, val=10%, train=70%)...")
-    X_train_raw, X_val_raw, X_test_raw, y_train, y_val, y_test = BaseModel.split_data(
-        X, y,
-        test_size=0.2,
-        val_size=0.1,
-        stratify=True,
-        random_state=random_state
-    )
+    print(f"Splitting data (test=20%, val=10%, train=70%)... strategy={split_strategy}")
+    def temporal_split():
+        if 'Year' not in X_raw.columns:
+            return None
+        df = X_raw.copy()
+        df['__y'] = y_raw.values
+        df = df.sort_values('Year')
+        n = len(df)
+        test_size = int(0.2 * n)
+        val_size = int(0.1 * n)
+        train = df.iloc[: n - test_size - val_size]
+        val = df.iloc[n - test_size - val_size: n - test_size]
+        test = df.iloc[n - test_size:]
+        return (train.drop(columns='__y'), val.drop(columns='__y'), test.drop(columns='__y'),
+                train['__y'], val['__y'], test['__y'])
+
+    def geo_split():
+        if geo_column not in X_raw.columns:
+            return None
+        gss = GroupShuffleSplit(test_size=0.2, n_splits=1, random_state=random_state)
+        groups = X_raw[geo_column]
+        train_idx, test_idx = next(gss.split(X_raw, y_raw, groups))
+        X_temp, X_test_raw = X_raw.iloc[train_idx], X_raw.iloc[test_idx]
+        y_temp, y_test = y_raw.iloc[train_idx], y_raw.iloc[test_idx]
+        groups_temp = groups.iloc[train_idx]
+        gss_val = GroupShuffleSplit(test_size=0.125, n_splits=1, random_state=random_state)
+        train_idx, val_idx = next(gss_val.split(X_temp, y_temp, groups_temp))
+        X_train_raw, X_val_raw = X_temp.iloc[train_idx], X_temp.iloc[val_idx]
+        y_train, y_val = y_temp.iloc[train_idx], y_temp.iloc[val_idx]
+        return X_train_raw, X_val_raw, X_test_raw, y_train, y_val, y_test
+
+    split = None
+    if split_strategy == 'temporal':
+        split = temporal_split()
+    elif split_strategy == 'geo':
+        split = geo_split()
+    if split is None:
+        X_train_raw, X_val_raw, X_test_raw, y_train, y_val, y_test = BaseModel.split_data(
+            X_raw, y_raw,
+            test_size=0.2,
+            val_size=0.1,
+            stratify=True,
+            random_state=random_state
+        )
+    else:
+        X_train_raw, X_val_raw, X_test_raw, y_train, y_val, y_test = split
 
     print(f"  Train: {len(X_train_raw)} samples")
     print(f"  Val:   {len(X_val_raw)} samples")
@@ -106,6 +149,7 @@ def train_model(X, y, model_type: str = 'logistic', model_params: dict = None,
     X_val, y_val = _drop_na(X_val, y_val)
     X_test, y_test = _drop_na(X_test, y_test)
 
+    target_mapping = None
     # Encode target after split to avoid leakage
     if y_train.dtype == 'object' or y_train.dtype.name == 'category':
         le = LabelEncoder()
@@ -113,6 +157,7 @@ def train_model(X, y, model_type: str = 'logistic', model_params: dict = None,
         y_val = pd.Series(le.transform(y_val), index=y_val.index, name=y_val.name)
         y_test = pd.Series(le.transform(y_test), index=y_test.index, name=y_test.name)
         print(f"Target encoded: {dict(enumerate(le.classes_))}")
+        target_mapping = {idx: cls for idx, cls in enumerate(le.classes_)}
 
     # Check class balance
     print(f"\nClass distribution:")
@@ -125,21 +170,27 @@ def train_model(X, y, model_type: str = 'logistic', model_params: dict = None,
 
     if model_type == 'logistic':
         print(f"\nTraining Logistic Regression model...")
-        model = LogisticModel(random_state=random_state, scaler=False, **model_params)
+        model = LogisticModel(random_state=random_state, scaler=False, class_weight=class_weight, **model_params)
     elif model_type == 'random_forest':
         print(f"\nTraining Random Forest model...")
-        model = RandomForestModel(random_state=random_state, scaler=False, **model_params)
+        model = RandomForestModel(random_state=random_state, scaler=False, class_weight=class_weight, **model_params)
     else:
         raise ValueError(f"Unknown model type: {model_type}. Use 'logistic' or 'random_forest'")
 
     model.fit(X_train, y_train)
     print(f"Model trained successfully!")
 
-    return model, X_train, X_val, X_test, y_train, y_val, y_test
+    return (
+        model,
+        (X_train, X_val, X_test, y_train, y_val, y_test),
+        (X_train_raw, X_val_raw, X_test_raw),
+        target_mapping,
+    )
 
 
 def evaluate_and_visualize(model, X_train, X_val, X_test, y_train, y_val, y_test,
-                          feature_names, model_type: str = 'logistic', output_dir: str = None) -> dict:
+                          feature_names, model_type: str = 'logistic', output_dir: str = None,
+                          timestamp: str = None) -> Tuple[dict, str]:
     """
     Comprehensive model evaluation with visualizations.
     
@@ -169,7 +220,8 @@ def evaluate_and_visualize(model, X_train, X_val, X_test, y_train, y_val, y_test
     evaluator.print_evaluation_report(results)
     
     # Save results
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    if timestamp is None:
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     model_name = model_type.replace('_', '')
     evaluator.save_evaluation_report(results, f'{model_name}_model', timestamp)
     
@@ -218,7 +270,7 @@ def evaluate_and_visualize(model, X_train, X_val, X_test, y_train, y_val, y_test
     # Classification report
     evaluator.print_classification_report(y_test, y_test_pred)
     
-    return results
+    return results, timestamp
 
 
 def save_model(model, model_type: str = 'logistic', output_dir: str = None):
@@ -240,6 +292,93 @@ def save_model(model, model_type: str = 'logistic', output_dir: str = None):
     return str(model_path)
 
 
+def run_cross_validation(model_type: str, X_train, y_train, cv_folds: int,
+                         random_state: int, output_dir: Path, timestamp: str,
+                         class_weight: Optional[str] = None) -> dict:
+    """
+    Run cross-validation on training data and save summary metrics.
+    """
+    if cv_folds is None or cv_folds < 2:
+        return {}
+
+    if model_type == 'logistic':
+        model = LogisticModel(random_state=random_state, scaler=False, class_weight=class_weight)
+    elif model_type == 'random_forest':
+        model = RandomForestModel(random_state=random_state, scaler=False, class_weight=class_weight or 'balanced')
+    else:
+        raise ValueError(f"Unknown model type: {model_type}")
+
+    scoring = ['accuracy', 'precision', 'recall', 'f1', 'roc_auc']
+    print(f"\nRunning {cv_folds}-fold cross-validation ({model_type})...")
+    cv = StratifiedKFold(n_splits=cv_folds, shuffle=True, random_state=random_state)
+    cv_results = cross_validate(
+        model, X_train, y_train,
+        cv=cv,
+        scoring=scoring,
+        n_jobs=-1,
+        return_train_score=False,
+        error_score='raise'
+    )
+
+    summary = {metric: {'mean': float(cv_results[f'test_{metric}'].mean()),
+                        'std': float(cv_results[f'test_{metric}'].std())}
+               for metric in scoring}
+    print("CV summary:")
+    for metric, stats in summary.items():
+        print(f"  {metric:10s}: {stats['mean']:.4f} ± {stats['std']:.4f}")
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    cv_path = output_dir / f"cv_{model_type}_{timestamp}.json"
+    import json
+    with open(cv_path, 'w') as f:
+        json.dump({'folds': cv_folds, 'model': model_type, 'timestamp': timestamp,
+                   'summary': summary}, f, indent=2)
+    print(f"Cross-validation results saved to: {cv_path}")
+    return summary
+
+
+def fairness_report(X_raw_test: pd.DataFrame, y_test: pd.Series, model_type: str,
+                    output_dir: Path, timestamp: str, target_mapping: dict = None) -> dict:
+    """
+    Compute simple group-wise positive rates on test split for fairness signal.
+    """
+    if X_raw_test is None or y_test is None:
+        return {}
+
+    df = X_raw_test.copy()
+    df['target'] = y_test
+
+    positive_label = 1
+    groups = {}
+    for col in ['Victim Sex', 'Victim Race']:
+        if col in df.columns:
+            grp = df.groupby(col)['target'].agg(['count', 'mean']).reset_index()
+            grp = grp.rename(columns={'mean': 'positive_rate'})
+            groups[col] = grp.to_dict(orient='records')
+
+    if not groups:
+        return {}
+
+    report = {
+        'model': model_type,
+        'timestamp': timestamp,
+        'positive_label': target_mapping.get(positive_label) if target_mapping else positive_label,
+        'groups': groups,
+    }
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    import json
+    fairness_path = output_dir / f"fairness_{model_type}_{timestamp}.json"
+    with open(fairness_path, 'w') as f:
+        json.dump(report, f, indent=2)
+    print(f"Fairness report saved to: {fairness_path}")
+    for col, rows in groups.items():
+        print(f"\nGroup positive rates by {col}:")
+        for row in rows:
+            print(f"  {row[col]!s:12s} count={row['count']:5d} positive_rate={row['positive_rate']:.3f}")
+    return report
+
+
 def main():
     """Main training pipeline."""
     parser = argparse.ArgumentParser(description='Train and evaluate murder prediction model')
@@ -258,6 +397,23 @@ def main():
                        help='Random seed for reproducibility')
     parser.add_argument('--no-save', action='store_true',
                        help='Skip saving model to disk')
+    parser.add_argument('--cv-folds', type=int, default=0,
+                       help='If >1, run cross-validation with given folds on training set')
+    parser.add_argument('--split-strategy', type=str, default='random',
+                       choices=['random', 'temporal', 'geo'],
+                       help='Data split strategy: random (default), temporal (by Year), geo (by column)')
+    parser.add_argument('--geo-column', type=str, default='State',
+                       help='Column to use for geographic splits (default: State)')
+    parser.add_argument('--class-weight', type=str, default=None,
+                       help="Class weight for models (e.g., 'balanced')")
+    parser.add_argument('--logreg-C', type=float, default=None,
+                       help="Override Logistic Regression C")
+    parser.add_argument('--logreg-penalty', type=str, default=None,
+                       help="Override Logistic Regression penalty (e.g., l1, l2)")
+    parser.add_argument('--logreg-solver', type=str, default=None,
+                       help="Override Logistic Regression solver (e.g., liblinear, saga)")
+    parser.add_argument('--logreg-max-iter', type=int, default=None,
+                       help="Override Logistic Regression max iterations")
     
     args = parser.parse_args()
     
@@ -274,18 +430,48 @@ def main():
         # Load raw data
         X_raw, y_raw = load_data(args.data, args.target, args.nrows)
 
+        cw = None if (args.class_weight is None or str(args.class_weight).lower() == 'none') else args.class_weight
+
+        model_params = {}
+        if args.model == 'logistic':
+            if args.logreg_C is not None:
+                model_params['C'] = args.logreg_C
+            if args.logreg_penalty is not None:
+                model_params['penalty'] = args.logreg_penalty
+            if args.logreg_solver is not None:
+                model_params['solver'] = args.logreg_solver
+            if args.logreg_max_iter is not None:
+                model_params['max_iter'] = args.logreg_max_iter
+
         # Train model
-        model, X_train, X_val, X_test, y_train, y_val, y_test = train_model(
-            X_raw, y_raw, model_type=args.model, random_state=args.random_state
+        (model,
+         (X_train, X_val, X_test, y_train, y_val, y_test),
+         (X_train_raw, X_val_raw, X_test_raw),
+         target_mapping) = train_model(
+            X_raw, y_raw, model_type=args.model, random_state=args.random_state,
+            split_strategy=args.split_strategy, geo_column=args.geo_column,
+            class_weight=cw,
+            model_params=model_params or None
         )
 
         feature_names = X_train.columns.tolist()
         
         # Evaluate and visualize
-        results = evaluate_and_visualize(
+        results, ts = evaluate_and_visualize(
             model, X_train, X_val, X_test, y_train, y_val, y_test,
             feature_names, model_type=args.model, output_dir=args.output_dir
         )
+
+        output_dir_path = Path(args.output_dir)
+
+        # Optional cross-validation
+        run_cross_validation(
+            args.model, X_train, y_train, args.cv_folds, args.random_state,
+            output_dir_path, ts, class_weight=cw
+        )
+
+        # Simple fairness check on raw test split
+        fairness_report(X_test_raw, y_test, args.model, output_dir_path, ts, target_mapping)
         
         # Save model
         if not args.no_save:

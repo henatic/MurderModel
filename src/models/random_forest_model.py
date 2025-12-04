@@ -22,7 +22,8 @@ class RandomForestModel(BaseModel):
                  max_features: str = 'sqrt',
                  random_state: Optional[int] = None,
                  scaler: bool = False,
-                 n_jobs: int = -1):
+                 n_jobs: int = -1,
+                 class_weight: Optional[str] = None):
         """
         Initialize Random Forest model.
         
@@ -45,6 +46,7 @@ class RandomForestModel(BaseModel):
         self.random_state = random_state
         self.scaler = scaler
         self.n_jobs = n_jobs
+        self.class_weight = class_weight
         self.pipeline = None
 
     def fit(self, X: pd.DataFrame, y: pd.Series) -> 'RandomForestModel':
@@ -60,7 +62,8 @@ class RandomForestModel(BaseModel):
             min_samples_leaf=self.min_samples_leaf,
             max_features=self.max_features,
             random_state=self.random_state,
-            n_jobs=self.n_jobs
+            n_jobs=self.n_jobs,
+            class_weight=self.class_weight
         )))
 
         self.pipeline = Pipeline(steps)

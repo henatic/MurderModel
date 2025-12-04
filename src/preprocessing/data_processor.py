@@ -30,6 +30,9 @@ class DataProcessor:
             'Perpetrator Ethnicity',
             'Perpetrator Age',
             'Perpetrator_Age_Group',
+            'Relationship',  # High correlation (-0.47), known post-investigation
+            'Crime Type',     # 98.8% same value (low variance)
+            'Record Source',  # 100% same value (no information)
         }
         self.fitted = False
         self.fitted_categorical_columns: List[str] = []

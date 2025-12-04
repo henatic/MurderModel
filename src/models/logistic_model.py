@@ -18,12 +18,18 @@ class LogisticModel(BaseModel):
                  C: float = 1.0,
                  penalty: str = 'l2',
                  random_state: Optional[int] = None,
-                 scaler: bool = True):
+                 scaler: bool = True,
+                 class_weight: Optional[str] = None,
+                 solver: str = 'lbfgs',
+                 max_iter: int = 1000):
         super().__init__()
         self.C = C
         self.penalty = penalty
         self.random_state = random_state
         self.scaler = scaler
+        self.class_weight = class_weight
+        self.solver = solver
+        self.max_iter = max_iter
         self.pipeline = None
 
     def fit(self, X: pd.DataFrame, y: pd.Series) -> 'LogisticModel':
@@ -33,9 +39,10 @@ class LogisticModel(BaseModel):
             steps.append(('scaler', StandardScaler()))
         steps.append(('clf', LogisticRegression(C=self.C,
                                                 penalty=self.penalty,
-                                                solver='lbfgs',
-                                                max_iter=1000,
-                                                random_state=self.random_state)))
+                                                solver=self.solver,
+                                                max_iter=self.max_iter,
+                                                random_state=self.random_state,
+                                                class_weight=self.class_weight)))
 
         self.pipeline = Pipeline(steps)
         self.pipeline.fit(X, y)

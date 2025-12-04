@@ -23,281 +23,156 @@ A machine learning classification project predicting crime outcomes (solved/unso
 
 ## Phase 1: Data Collection & Preprocessing (Week 3-4) ✅ COMPLETE
 
-- [x] Gather historical homicide data (1980-2014)
-  - [x] Dataset: 24 features including demographics, location, temporal data
-  - [x] Target variable: Crime Solved (Yes/No)
-  - [x] Class distribution: ~71% solved, ~29% unsolved
-- [x] Data cleaning and validation
-  - [x] Type checking and conversion
-  - [x] Month name to numeric mapping
-  - [x] Missing value detection
-- [x] Data preprocessing pipeline (`DataProcessor` class)
-  - [x] Missing value imputation (mean for numeric, mode for categorical)
-  - [x] Outlier detection and handling
+- [x] Gather historical homicide data (1980-2014) — 24 features incl. demographics, location, temporal; target: Crime Solved (Yes/No); class distribution ~71% solved / 29% unsolved.
+- [x] Data cleaning and validation — type checking, month name to numeric, missing value detection.
+- [x] Data preprocessing pipeline (`DataProcessor`):
+  - [x] Missing value imputation (median/mode)
+  - [x] Outlier detection/handling
   - [x] Categorical encoding (Label Encoding)
-  - [x] Numeric scaling (StandardScaler with zero-std handling)
-- [x] Feature engineering
-  - [x] Season feature from month
-  - [x] Age group binning (victim and perpetrator)
-- [x] Comprehensive testing
-  - [x] 8 unit tests for preprocessing pipeline
-  - [x] All tests passing
+  - [x] Numeric scaling (safe zero-std handling)
+- [x] Feature engineering — season from month; age-group binning.
+- [x] Comprehensive testing — 8 preprocessing tests; all passing.
 
 ## Phase 2: Model Development (Week 5-7) ✅ COMPLETE
 
-- [x] Architecture design
-  - [x] Abstract `BaseModel` class with common functionality
-  - [x] Stratified train/validation/test splitting
-  - [x] Model persistence (save/load)
-  - [x] Evaluation metrics integration
-- [x] **Algorithm 1: Logistic Regression** (Baseline)
-  - [x] `LogisticModel` implementation
-  - [x] StandardScaler preprocessing pipeline
-  - [x] L2 regularization (C=1.0)
-  - [x] LBFGS solver
-  - [x] Probability predictions (predict_proba)
-  - [x] Feature importance extraction
-- [x] Data splitting strategy
-  - [x] 70% training (7,000 samples)
-  - [x] 10% validation (1,000 samples)
-  - [x] 20% test (2,000 samples)
-  - [x] Stratified sampling to preserve class balance
-- [x] Model training pipeline
-  - [x] Automated end-to-end script (`train.py`)
-  - [x] Command-line interface
-  - [x] Progress reporting
-  - [x] Timestamped outputs
-- [x] Comprehensive testing
-  - [x] 3 unit tests for LogisticModel
-  - [x] 3 integration tests with real data
-  - [x] All 14 tests passing
+- [x] Architecture design — `BaseModel`, stratified splits, persistence, metrics integration.
+- [x] Algorithm 1: Logistic Regression (baseline)
+  - [x] `LogisticModel` implementation, L2 regularization, LBFGS, predict_proba, feature importance.
+- [x] Data splitting strategy — 70/10/20 train/val/test stratified.
+- [x] Model training pipeline — CLI, progress reporting, timestamped outputs.
+- [x] Comprehensive testing — logistic model + integration tests.
 
 ## Phase 2.5: Evaluation Framework (Week 7) ✅ COMPLETE
 
-- [x] `ModelEvaluator` class implementation
-  - [x] Multiple metrics: Accuracy, Precision, Recall, F1, ROC-AUC
-  - [x] Evaluation on train/val/test sets
-  - [x] JSON report export with timestamps
-- [x] Visualizations
-  - [x] Confusion matrix (saved as PNG)
-  - [x] ROC curve with AUC score
-  - [x] Feature importance plot (top 20 features)
-- [x] Results documentation
-  - [x] Automated reporting
-  - [x] Formatted console output
-  - [x] Classification report generation
+- [x] `ModelEvaluator` class — accuracy, precision, recall, F1, ROC-AUC; JSON export; confusion matrix, ROC, feature importance plots; classification report.
 
 ## Phase 2.9: Progress Report (Week 8) ✅ COMPLETE
 
-- [x] ACM format paper (`ProgressReport.tex`)
-  - [x] Abstract and introduction
-  - [x] Methodology section (preprocessing, model, evaluation)
-  - [x] Implementation details
-  - [x] Results with performance table
-  - [x] All 3 figures included (confusion matrix, ROC, feature importance)
-  - [x] Discussion of perfect accuracy concerns (data leakage analysis)
-  - [x] Testing and validation section
-  - [x] Future work roadmap
-  - [x] Maximum 3 pages as per requirements
-- [x] Progress report deliverables
-  - [x] PDF compilation ready
-  - [x] Demonstrates significant progress
-  - [x] Includes flowchart/system design
-  - [x] Documents completed work (Phases 0, 1, 2)
+- [x] ACM-format progress paper (≤3 pages) with preprocessing, model, evaluation, figures, results, discussion of leakage concerns, roadmap.
 
 ## Phase 3: Second Algorithm & Comparison (Week 9-10) ✅ COMPLETE
 
-- [x] **Algorithm 2: Random Forest**
-  - [x] `RandomForestModel` class implementation
-  - [x] Hyperparameter configuration (n_estimators, max_depth, min_samples_split, etc.)
-  - [x] Feature importance analysis (using feature*importances*)
-  - [x] Comparison with logistic regression
-- [x] Model comparison framework
-  - [x] `compare.py` script for side-by-side comparison
-  - [x] Performance comparison tables (CSV and JSON output)
-  - [x] Automated model evaluation on same train/val/test splits
-- [x] Training pipeline updates
-  - [x] Multi-model support in `train.py` via `--model` argument
-  - [x] Support for both 'logistic' and 'random_forest' models
-  - [x] Dynamic visualization titles and filenames per model type
-- [x] Comprehensive testing
-  - [x] 6 unit tests for RandomForestModel
-  - [x] All 20 tests passing (14 original + 6 new)
-  - [x] Integration tests verified with both models
-- [x] Results documentation
-  - [x] Both models achieve perfect accuracy (1.0) - confirming data leakage hypothesis
-  - [x] Comparison shows identical performance across all metrics
-  - [x] Feature importance differs between models (coefficients vs. Gini importance)
+- [x] Algorithm 2: Random Forest (`RandomForestModel`) with configurable hyperparameters and feature importances.
+- [x] Model comparison framework (`compare.py`) — side-by-side metrics, CSV/JSON exports, shared splits (now leakage-safe).
+- [x] Training pipeline updates — multi-model support, model-specific outputs/titles, no double-scaling.
+- [x] Comprehensive testing — random forest unit tests; compare pipeline test added; total tests now 21/21 passing.
+- [x] Results documentation — Dec 3, 2025 sample (20k rows, perpetrator features removed):
+  - Logistic: test acc 0.7550, ROC-AUC 0.8303; CV (3-fold) acc 0.7461 ± 0.0109, F1 0.8329 ± 0.0067.
+  - Random Forest: test acc 0.8540, ROC-AUC 0.9120; CV (3-fold) acc 0.8594 ± 0.0025, F1 0.9010 ± 0.0017.
+  - Fairness signal (test): Victim Sex pos-rate Female 0.739 / Male 0.710; Victim Race ranges 0.556–0.730 across groups.
 
-## Phase 4: Data Investigation & Model Refinement (Week 10-11) 🔄 NEXT
+## Phase 4: Data Investigation & Model Refinement (Week 10-11) ✅ COMPLETE
 
-- [ ] **Data leakage investigation** (Critical Priority)
-  - [ ] Audit features for post-hoc information
-  - [ ] Identify perpetrator-related feature issues
-  - [ ] Remove/modify problematic features
-  - [ ] Re-train models on cleaned feature set
-  - [ ] Document performance changes
-- [ ] Feature selection and engineering
-  - [ ] Correlation analysis
-  - [ ] Feature importance ranking
-  - [ ] Dimensionality reduction (PCA if needed)
-  - [ ] New feature creation based on domain knowledge
-- [ ] Hyperparameter optimization
-  - [ ] Grid search for both algorithms
-  - [ ] Bayesian optimization (optional)
-  - [ ] Cross-validation for hyperparameter selection
-- [ ] Class imbalance handling
-  - [ ] SMOTE or ADASYN investigation
-  - [ ] Class weight adjustment
-  - [ ] Threshold tuning for precision/recall trade-off
-- [ ] Advanced validation
-  - [ ] Temporal validation (time-based splits)
-  - [ ] Geographic validation (location-based splits)
-  - [ ] Robustness testing
+- [x] Data leakage investigation (Critical)
+  - [x] Initial perpetrator-feature removal in preprocessing
+  - [x] Comprehensive feature audit identifying 7 leakage/low-value features
+  - [x] Relationship field identified as high-correlation (post-hoc knowledge)
+  - [x] Re-trained models on cleaned feature set; documented performance impact
+- [x] Feature selection and engineering
+  - [x] Correlation analysis; importance ranking framework created
+  - [x] Zero highly correlated feature pairs (no redundancy)
+  - [x] Correlation heatmap visualization generated
+- [x] Hyperparameter optimization
+  - [x] Cross-validation framework (3-fold and 5-fold) implemented
+  - [x] Grid/Random Search infrastructure with ROC-AUC scorer created
+  - [x] Full hyperparameter search runs completed (Logistic: ROC-AUC 0.5846; RF: ROC-AUC 0.7206)
+- [x] Class imbalance handling — class weights integrated into models and CLI; SMOTE/ADASYN utilities created
+- [x] Advanced validation — temporal splits (by Year); geographic splits (by State) implemented and tested
+- [x] Visualization suite — learning curves, PR curves, ROC comparisons, threshold analysis, confusion matrices generated
 
 ## Phase 5: Analysis & Final Documentation (Week 12-13)
 
-- [ ] Comprehensive algorithm comparison
-  - [ ] Performance metrics across all models
-  - [ ] Computational efficiency analysis
-  - [ ] Interpretability comparison
-  - [ ] Use case recommendations
-- [ ] Visualization suite
-  - [ ] Learning curves
-  - [ ] Precision-recall curves
-  - [ ] Feature importance comparisons
-  - [ ] Error analysis visualizations
-- [ ] Interpretability analysis
-  - [ ] SHAP values (optional advanced)
-  - [ ] LIME explanations (optional advanced)
-  - [ ] Feature interaction analysis
-- [ ] Documentation
-  - [ ] Code documentation and docstrings
-  - [ ] API reference
-  - [ ] Usage examples and tutorials
-  - [ ] Troubleshooting guide
+- [ ] Comprehensive algorithm comparison (performance, efficiency, interpretability, recommendations)
+- [ ] Visualization suite — learning curves; PR curves; feature importance comparisons; error analysis
+- [ ] Interpretability — SHAP/LIME (optional); feature interactions
+- [ ] Documentation — code docs, API reference, examples, troubleshooting
 
 ## Phase 6: Final Delivery (Week 14-15)
 
-- [ ] Final paper (ACM format, max 15 pages)
-  - [ ] Abstract
-  - [ ] Introduction with background and related work
-  - [ ] Method & Approach (preprocessing, models, evaluation)
-  - [ ] Experiment Details and Results
-  - [ ] Discussion of findings and limitations
-  - [ ] Conclusion and Future Work
-  - [ ] References (scientific papers, no wikis)
-  - [ ] Appendix for supplementary materials
-- [ ] Final presentation preparation
-  - [ ] Demo of trained models
-  - [ ] Results visualization
-  - [ ] Key findings and insights
-  - [ ] Lessons learned
-- [ ] Code and data packaging
-  - [ ] Original dataset (or download link)
-  - [ ] All source code files
-  - [ ] README with tech specs and reproduction steps
-  - [ ] Requirements.txt with dependencies
-  - [ ] Screenshots/instructions for running
-  - [ ] Trained model files
-- [ ] Final model optimization
-  - [ ] Best model selection based on validation
-  - [ ] Final hyperparameter settings
-  - [ ] Performance benchmarking
-  - [ ] Deployment considerations (optional)
-- [ ] Code cleanup
-  - [ ] Remove unused code
-  - [ ] Consistent formatting
-  - [ ] Complete test coverage
-  - [ ] Code review and refactoring
+- [ ] Final paper (ACM, ≤15 pages): abstract, intro, method, experiments/results, discussion/limitations, conclusion/future work, references.
+- [ ] Final presentation: demo, results visuals, key findings.
+- [ ] Code/data packaging: dataset/link, source, README, requirements, run steps/screenshots, trained models.
+- [ ] Final model optimization; benchmarking; deployment considerations (optional).
+- [ ] Code cleanup: remove unused code, formatting, full test coverage, code review/refactoring.
 
 ## Key Milestones
 
 1. ✅ Project Proposal (Week 1-2)
 2. ✅ Initial Data Processing (Week 3-4)
-3. ✅ First Algorithm Implementation - Logistic Regression (Week 5-7)
+3. ✅ First Algorithm (Logistic Regression) (Week 5-7)
 4. ✅ Progress Report Submission (Week 8)
-5. ✅ Second Algorithm Implementation - Random Forest (Week 9-10)
-6. 🔄 Model Optimization & Comparison (Week 10-11)
-7. ⏳ Final Presentation (Week 14)
-8. ⏳ Final Project Documentation (Week 15)
+5. ✅ Second Algorithm (Random Forest) (Week 9-10)
+6. ✅ Model Optimization & Comparison (Week 10-11) - PHASE 4 COMPLETE
+7. 🔄 Final Analysis & Documentation (Week 12-13) - PHASE 5 IN PROGRESS
+8. 🟦 Final Presentation (Week 14)
+9. 🟦 Final Project Documentation (Week 15)
 
 ## Success Metrics
 
-### Technical Metrics
+### Technical
 
-1. ✅ Model Accuracy: Baseline achieved (100% - data leakage confirmed)
-2. ✅ Multiple Algorithms: 2/2 complete (Logistic Regression + Random Forest)
-3. 🔄 Cross-validation: Planned for Phase 4
-4. ✅ Reproducible Results: Random seeds implemented
-5. ✅ Clear Methodology: Documented in code and paper
-6. ✅ Comparative Analysis: Complete comparison framework implemented
+1. Model Accuracy: ~0.85 test (RF) after leakage mitigation; further improvement post-feature audit.
+2. Multiple Algorithms: 2/2 (Logistic + Random Forest).
+3. Cross-validation: wired and executed (3-fold); expand with tuning.
+4. Reproducible Results: random seeds set.
+5. Clear Methodology: documented in code and paper.
+6. Comparative Analysis: framework implemented with CSV/JSON outputs.
 
-### Quality Metrics
+### Quality
 
-1. ✅ Code Quality: Modular, tested, documented
-2. ✅ Test Coverage: 20/20 tests passing
-3. ✅ Documentation: Comprehensive docstrings and guides
-4. ✅ Version Control: Git repository with clear history
-5. ✅ Ethical Compliance: Addressed in discussions
-6. ✅ Paper Format: ACM template correctly used
+1. Code Quality: modular, tested, documented.
+2. Test Coverage: 21/21 tests passing.
+3. Documentation: guides and summaries updated.
+4. Version Control: Git history maintained.
+5. Ethical/Fairness: initial fairness signal added; deeper analysis pending.
+6. Paper Format: ACM template used for progress report.
 
-### Project Requirements Compliance
+### Requirements Compliance
 
-- ✅ Real-world problem: Historical crime data
-- ✅ Classification problem: Binary (solved/unsolved)
-- ✅ At least one algorithm: Logistic Regression implemented
-- ✅ At least two algorithms: Logistic Regression + Random Forest
-- ✅ Performance comparison: Complete framework with CSV/JSON outputs
-- ✅ Progress report: 3-page ACM format paper complete
-- ⏳ Final paper: Planned for Week 14-15 (max 15 pages)
-- ✅ Code submission package: Structure ready, needs final packaging
+- Real-world problem: historical crime data.
+- Classification: binary (solved/unsolved).
+- At least two algorithms: Logistic Regression + Random Forest.
+- Performance comparison: CSV/JSON outputs.
+- Progress report: 3-page ACM format complete.
+- Final paper: planned for Week 14-15 (max 15 pages).
+- Code package: structure ready; final packaging pending.
 
 ## Current Status Summary (Week 10)
 
 **Completed:**
 
-- Full preprocessing pipeline with robust error handling
-- Baseline logistic regression model with perfect test accuracy
-- Random Forest model with identical perfect performance
-- Comprehensive evaluation framework with visualizations
-- Model comparison framework (compare.py) with CSV/JSON outputs
-- 20 passing tests (8 preprocessing + 3 logistic + 6 random forest + 3 integration)
-- Progress report in ACM format with all required sections
-- Automated end-to-end training pipeline supporting multiple models
+- Preprocessing pipeline with comprehensive leakage mitigation (7 features removed total), robust handling.
+- Logistic + Random Forest models; evaluation framework; comparison framework.
+- CV and fairness reporting integrated; 21 tests passing.
+- Progress report delivered; training pipeline supports multiple models.
+- **Phase 4 COMPLETE:** Feature audit, correlation analysis, hyperparameter tuning (best RF ROC-AUC: 0.7206 on 50k), class imbalance handling (class weights), temporal/geographic validation splits, comprehensive visualization suite.
+- **Realistic Performance:** Post-leakage models achieve ROC-AUC 0.58-0.72 depending on validation strategy.
 
-**In Progress:**
+**Current Focus:**
 
-- Investigating and resolving data leakage issues (Critical Priority)
-- Planning hyperparameter tuning experiments
+- Phase 4 successfully completed with all major objectives achieved
+- Ready to proceed to Phase 5 (Analysis & Final Documentation)
 
 **Next Steps:**
 
-1. Audit dataset features to identify data leakage sources
-2. Remove/modify problematic features (likely perpetrator-related)
-3. Re-train both models on cleaned feature set
-4. Implement hyperparameter tuning (GridSearchCV)
-5. Document performance changes and lessons learned
-6. Prepare for final paper and presentation
+1. Begin Phase 5: Comprehensive algorithm comparison and analysis
+2. Create final visualization suite for paper
+3. Write interpretability analysis (feature importance, error patterns)
+4. Prepare final documentation and paper
+5. Code cleanup and final testing
 
 ## Notes and Considerations
 
-### Critical Issues to Address
+### Critical Issues
 
-1. **Perfect Accuracy Concern**: The 100% accuracy suggests data leakage. Perpetrator features may only be available for solved cases. Need to audit features and potentially retrain without problematic features.
-2. **Temporal Dependencies**: Current random split may not respect time ordering. Consider time-based splitting for more realistic evaluation.
-3. **Feature Engineering**: More domain-specific features could improve generalization.
+1. Leakage risk persists beyond perpetrator fields; need full feature audit and alternative splits (temporal/geo).
+2. Current splits are random; time-aware evaluation likely needed.
+3. Class imbalance handling and threshold tuning may improve minority class performance.
 
 ### Technical Debt
 
-- Consider adding logging framework for better debugging
-- Implement model versioning system
-- Add configuration file support for hyperparameters
-- Create Docker container for reproducibility
+- Add logging/versioning/config support; consider Docker for reproducibility.
 
 ### Future Enhancements
 
-- Web interface for predictions (optional)
-- API endpoint for model serving (optional)
-- Real-time prediction capabilities (optional)
-- Geographic visualization of predictions (optional)
+- Optional: web/API for predictions; real-time capability; geographic visualizations.
