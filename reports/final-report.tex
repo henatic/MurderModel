@@ -1,0 +1,166 @@
+% Final report for homicide case clearance prediction
+\documentclass[sigconf]{acmart}
+
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{booktabs}
+\usepackage{multirow}
+
+\title{Leakage-Aware Homicide Case Clearance Prediction}
+\subtitle{Evaluating Generalization Across Temporal and Geographic Splits}
+
+\author{Henry Morgan}
+\affiliation{%
+  \institution{University of Washington Bothell}
+  \department{CSS 581: Machine Learning}
+  \city{Bothell}
+  \state{Washington}
+  \country{USA}
+}
+\email{hdmorgan@uw.edu}
+
+\begin{CCSXML}
+<ccs2012>
+<concept>
+<concept_id>10010147.10010178.10010224</concept_id>
+<concept_desc>Computing methodologies~Machine learning</concept_desc>
+<concept_significance>500</concept_significance>
+</concept>
+<concept>
+<concept_id>10010405.10010481.10010484</concept_id>
+<concept_desc>Applied computing~Forecasting</concept_desc>
+<concept_significance>300</concept_significance>
+</concept>
+</ccs2012>
+\end{CCSXML}
+
+\ccsdesc[500]{Computing methodologies~Machine learning}
+\ccsdesc[300]{Applied computing~Forecasting}
+
+\keywords{crime prediction, data leakage, fairness, random forest, logistic regression, class imbalance}
+
+\begin{document}
+
+\begin{abstract}
+We study binary classification for homicide case clearance using 1980--2014 records from the Murder Accountability Project. Early prototypes over-fit because perpetrator attributes leaked future knowledge. After auditing and removing leakage-prone fields, we benchmark calibrated logistic regression and class-weighted random forests under random, temporal, and geographic splits. Random forests achieve the best random-split ROC-AUC (0.912) versus logistic regression (0.830), but both models fall to 0.58--0.64 under distribution shift. Cross-validation, threshold analysis, and group-rate fairness checks show modest gains from hyperparameter tuning yet persistent disparities by victim sex and race. We release a reproducible training pipeline, leakage audit, and visualization suite to support further study of equitable deployment.
+\end{abstract}
+
+\maketitle
+
+\section{Introduction}
+Police departments track hundreds of thousands of homicide investigations; the clearance rate matters both for public trust and resource allocation. We explore whether machine learning models can forecast case resolution while explicitly mitigating data leakage and auditing fairness. Our contributions are:
+\begin{itemize}
+    \item A leakage-audited pipeline that drops perpetrator-linked signals and low-variance fields\\ while retaining demographic/geographic context.
+    \item A comparative study of tuned logistic regression and class-weighted random forests across random, temporal, and geographic splits to surface generalization gaps.
+    \item Integrated validation (cross-validation, threshold tuning) and fairness probes (group positive rates) with companion visualizations.
+\end{itemize}
+
+\section{Background and Related Work}
+Crime prediction surveys emphasize the tension between predictive power and ethical risk~\cite{mandalapu2023crime}. Random forests remain competitive on tabular data~\cite{breiman2001random}, while logistic regression offers interpretability for criminal justice stakeholders. Fairness literature urges caution: policing data embed historic biases~\cite{lum2016predictive}, and equitable decision rules require explicit constraints~\cite{hardt2016equality,friedler2019comparative}. We position our work within this discourse by foregrounding leakage mitigation and distribution-shift evaluation on homicide clearance.
+
+\section{Data and Preprocessing}
+The dataset~\cite{larion2017homicide,murderaccountability} contains 1980--2014 U.S. homicide records with victim demographics, location, agency, and case attributes. The target is binary: whether a case was solved. The base distribution is imbalanced (approximately 71\% solved).
+
+\subsection{Leakage Mitigation}
+An audit of feature-target mutual information and domain semantics identified perpetrator attributes (age, race, sex, weapon) as high-risk leakage channels. We removed these fields, plus low-variance attributes (crime type, record source) and redundant relationship codes. Post-removal correlation analysis shows no pair exceeding 0.8, and target correlations are weak ($\leq 0.07$), indicating leakage suppression.
+
+\subsection{Processing Pipeline}
+The \texttt{DataProcessor} handles schema validation, missing-value imputation (mean for numeric, mode for categorical), categorical encoding, and numeric standardization. Class weights can be toggled per model; optional SMOTE/ADASYN hooks remain available but were not required for the reported runs. Splits include random (20k sample), temporal (train on early years, test on later), and geographic (train on subset of states, test on held-out regions).
+
+\section{Methods}
+\subsection{Models}
+We evaluate two baselines:
+\begin{itemize}
+    \item \textbf{Logistic Regression} with $L_{2}$ penalty, tuned regularization ($C{=}0.087$), \texttt{liblinear} solver, 1000 iterations, and optional class weights. This model offers calibrated probabilities and linear transparency.
+    \item \textbf{Random Forest} tuned via random search: 300 trees, depth 20, log2 feature subsampling, minimum split 50, leaf size 2, and balanced-subsample class weights. This configuration emphasizes recall on minority classes while maintaining precision.
+\end{itemize}
+
+\subsection{Validation and Tuning}
+We employ Stratified 3-fold cross-validation for random splits and threshold analysis to maximize F1 on validation folds. Hyperparameter searches explore $C$, penalty, and solver for logistic regression; and tree count, depth, split thresholds, and feature sampling for random forests. Best cross-validated ROC-AUCs reached 0.58 (logistic) and 0.72 (random forest) on 20k and 50k subsets respectively, with low variance across folds.
+
+\subsection{Metrics and Fairness Checks}
+We report accuracy, precision, recall, F1, and ROC-AUC. Group fairness is assessed via positive prediction rates across victim sex and race categories using held-out test sets; these descriptive metrics guide, but do not enforce, parity.
+
+\section{Experiments}
+\subsection{Setup}
+Models train on 20k random samples for baseline comparison and on 50k subsets for temporal and geographic robustness tests. Experiments run on CPU-only hardware using the provided training CLI (\texttt{train.py}) with flags for split strategy, class weighting, and hyperparameters. Evaluation artifacts include JSON summaries, ROC/PR curves, learning curves, and threshold diagnostics under \texttt{data/output/}.
+
+\subsection{Leakage Ablation}
+Removing perpetrator fields (sex, age, race, ethnicity), relationship codes, and crime type identifiers reduced random-split ROC-AUC from an early overfit score ($\approx$0.99) to 0.830 (logistic) and 0.912 (random forest), revealing that prior performance was driven by target leakage rather than transferable signal. The sharper drop on the forest underscores the critical importance of leakage detection in criminal justice prediction systems.
+
+\section{Results}
+\subsection{Random Split Baseline}
+Table~\ref{tab:random} summarizes performance on a 20k random split. Random forests outperform logistic regression across all metrics, with an 8-point ROC-AUC advantage and higher F1.
+
+\begin{table}[t]
+    \centering
+    \caption{Random split (20k) performance on held-out test data.}
+    \label{tab:random}
+    \begin{tabular}{lccc}
+        \toprule
+        Model & Accuracy & F1 & ROC-AUC \\
+        \midrule
+        Logistic Regression & 0.755 & 0.838 & 0.830 \\
+        Random Forest & \textbf{0.854} & \textbf{0.897} & \textbf{0.912} \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\subsection{Distribution Shift: Temporal and Geographic}
+Performance under distribution shift reveals model brittleness (Table~\ref{tab:shift}). Temporal splits show modest ROC-AUC values (0.608--0.644) with high recall maintained by both models. Geographic splits are similarly challenging: logistic regression sustains higher precision and F1, while random forests preserve higher recall, producing close AUCs.
+
+\begin{table}[t]
+    \centering
+    \caption{Temporal (50k) and geographic (20k/50k) splits. Metrics are from held-out test sets.}
+    \label{tab:shift}
+    \begin{tabular}{lcccc}
+        \toprule
+        Split & Model & Accuracy & F1 & ROC-AUC \\
+        \midrule
+        Temporal & Logistic & \textbf{0.781} & \textbf{0.877} & 0.608 \\
+        Temporal & Random Forest & 0.738 & 0.839 & \textbf{0.644} \\
+        Geographic & Logistic & \textbf{0.751} & \textbf{0.858} & 0.584 \\
+        Geographic & Random Forest & 0.675 & 0.802 & \textbf{0.617} \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\subsection{Cross-Validation and Thresholding}
+Stratified 3-fold cross-validation on the leakage-mitigated random split yields mean accuracy/F1 of 0.746/0.833 (logistic) and 0.859/0.901 (random forest) with low variance. Threshold analysis nudged optimal cutoffs slightly above 0.5, trading a small precision loss for higher recall.
+
+\subsection{Fairness Snapshot}
+On the random split, positive prediction rates by victim sex were 0.739 (Female) and 0.710 (Male) for logistic regression; race rates ranged from 0.679 (Native American/Alaska Native) to 0.730 (Black). Random forest rates were similar, indicating no large disparities but highlighting the absence of group-specific calibration.
+
+\subsection{Visual Diagnostics}
+Figure~\ref{fig:roc-pr} overlays ROC and PR curves, showing consistent random-forest dominance. Learning curves (Figure~\ref{fig:learning}) indicate smaller generalization gaps for random forests, though both models plateau quickly, suggesting feature limitations.
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=\linewidth]{../data/output/roc_comparison_reproduced.png}
+    \Description{Overlayed ROC and precision-recall curves comparing random forest versus logistic regression on the leakage-mitigated random split.}
+    \caption{ROC and PR comparison on the leakage-mitigated random split.}
+    \label{fig:roc-pr}
+\end{figure}
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=\linewidth]{../data/output/learning_curve_random_forest_(balanced_subsample)_20251203_214239.png}
+    \Description{Learning curve for the random forest model showing narrowing gap between training and validation ROC-AUC as sample size increases.}
+    \caption{Random-forest learning curve showing gradual gains and limited overfitting.}
+    \label{fig:learning}
+\end{figure}
+
+\section{Discussion}
+Leakage removal exposed the true difficulty of the task: once perpetrator hints are removed, ROC-AUC drops to 0.83--0.91 on random splits and 0.58--0.64 under temporal and geographic shifts. Both models achieve high recall but through different mechanisms: logistic regression leans toward higher positive rates (boosting F1 on temporal split), while random forests maintain better precision-recall balance. Geographic shifts expose the most severe brittleness, with both models losing AUC despite strong recall on random splits. Fairness probes reveal group-rate differences; absent explicit constraints~\cite{hardt2016equality}, deployment would risk encoding historical bias~\cite{lum2016predictive}. The dominant error modes are false negatives on unsolved cases in new regions and later years, suggesting covariate shift and feature sparsity.
+
+\section{Conclusion and Future Work}
+Leakage-aware preprocessing and robust validation are prerequisites for credible crime-prediction studies. Our experiments demonstrate that after proper leakage mitigation, modest tabular models achieve 0.83--0.91 ROC-AUC on random splits with significant degradation under distribution shift (0.58--0.64 range). Random forests provide better discriminative ability and comparable F1 to logistic regression, but both models struggle to transfer across time and geography. For production deployment, we would pair the forest for discriminative ranking with the logistic model for interpretability and stability, and only after additional fairness and shift analyses. Future work should: (i) add spatial-temporal embeddings and agency-level covariates to address covariate shift, (ii) explore calibrated gradient boosting with aggressive regularization, (iii) integrate group-aware thresholding or equalized-odds constraints to address fairness, and (iv) investigate the geographic recall collapse through detailed error analysis. We release code, configuration defaults, and evaluation artifacts to encourage reproducible follow-up.
+
+\begin{acks}
+Thanks to the Murder Accountability Project for data access and to the CSS 581 course staff for feedback on ethical framing.
+\end{acks}
+
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{final-report}
+
+\end{document}
